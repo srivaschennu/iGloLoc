@@ -46,6 +46,9 @@ subjlists = {
     'SS_igloloc2'
     'WAP_igloloc2'
     'TG_igloloc2'
+    'DFT_igloloc2'
+    'MCV_igloloc2'
+    'JW_igloloc2'
     }
     
     {

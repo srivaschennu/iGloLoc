@@ -2,14 +2,14 @@ function batchrun
 
 loadsubj;
 
-subjlist = 4;
+subjlist = 3;
 subjlist = subjlists{subjlist};
 
 for s = 1:length(subjlist)
     subjname = subjlist{s};
     
-    %         dataimport(subjname);
-    %     epochdata(subjname);
+%     dataimport(subjname);
+%     epochdata(subjname);
     rejartifacts2(subjname,2,3,0);
     
     %         ploterp(subjname,{'ls','ld'},[-20 20],1);
