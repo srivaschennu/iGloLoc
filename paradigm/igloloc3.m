@@ -1,5 +1,11 @@
 function igloloc3(session)
 
+%check session type is valid
+if ~exist('session','var') || (~strcmp(session,'TONE') && ...
+        ~strcmp(session,'SEQUENCE') && ~strcmp(session,'VISUAL'))
+    error('Input argument SESSION must be one of ''TONE'' ''SEQUENCE'' or ''VISUAL''.');
+end
+
 PsychJavaTrouble
 
 starttime = GetSecs;
@@ -202,6 +208,9 @@ while hd.blocknum <= length(hd.blocklist)
     
     blockname = hd.blocklist(hd.blocknum,:);
     
+    %randomize slightly the sequence counts for each block
+    deviantcnt = deviantcnt + round(rand(size(deviantcnt))*4)-2;
+    
     %setup block stimulus sequence
     
     fprintf('Initialising pseudorandom sequence for  block %d %s.\n', hd.blocknum, blockname);
@@ -344,7 +353,8 @@ while hd.blocknum <= length(hd.blocklist)
         s = sprintf('Pay attention and count any uncommon sounds');
         TextBounds = Screen('TextBounds', hd.window, s);
         Screen('DrawText',hd.window,s,hd.right/2-TextBounds(3)/2,hd.bottom/2+TextBounds(4),hd.textcolor,hd.bgcolor);
-        
+        hd.sesstype = 1;
+    
     elseif strcmp(hd.session,'SEQUENCE')
         s = sprintf('You will hear sequences of 5 sounds');
         TextBounds = Screen('TextBounds', hd.window, s);
@@ -352,6 +362,7 @@ while hd.blocknum <= length(hd.blocklist)
         s = sprintf('Pay attention and count any uncommon sequences');
         TextBounds = Screen('TextBounds', hd.window, s);
         Screen('DrawText',hd.window,s,hd.right/2-TextBounds(3)/2,hd.bottom/2+TextBounds(4),hd.textcolor,hd.bgcolor);
+        hd.sesstype = 2;
         
     elseif strcmp(hd.session,'VISUAL')
         hd.targletter = ceil(rand*length(hd.letters));
@@ -362,7 +373,13 @@ while hd.blocknum <= length(hd.blocklist)
         [newX, newY] = Screen('DrawText',hd.window,s,hd.right/2-TextBounds(3)/2,hd.bottom/2-TextBounds(4)/2,hd.textcolor,hd.bgcolor);
         s = sprintf('%s',hd.colornames{hd.targcolor});
         Screen('DrawText',hd.window,s,newX,newY,hd.colors(hd.targcolor,:),hd.bgcolor);
+        hd.sesstype = 3;
     end
+    
+    NetStation('Event','SESS',GetSecs,0.001,'TYPE',hd.sesstype);
+    sendmarker(hd.MARKERS.SESS+hd.sesstype);
+    pause(0.5);
+
     Screen('Flip',hd.window);
     NetStation('Event','VINS',GetSecs,0.001,'BNUM',hd.blocknum);
     sendmarker(hd.MARKERS.VINS);

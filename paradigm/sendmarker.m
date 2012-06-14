@@ -7,12 +7,13 @@ EEGMODE = true;
 % parallel port to work correctly
 MARKERPAUSE = 0.05;
 
-%fprintf('sendmarker %03d\n',value);
+% fprintf('sendmarker %03d\n',value);
 
 if EEGMODE && IsWin
     PortIO(2,888,value);
     pause(MARKERPAUSE);
     PortIO(2,888,0);
+    pause(0.02);
 end
 
 end

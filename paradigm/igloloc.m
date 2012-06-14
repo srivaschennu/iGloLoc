@@ -6,6 +6,12 @@ if nargin == 0
     session = 'SEQUENCE';
 end
 
+%check session type is valid
+if ~exist('session','var') || (~strcmp(session,'TONE') && ...
+        ~strcmp(session,'SEQUENCE') && ~strcmp(session,'VISUAL'))
+    error('Input argument SESSION must be one of ''TONE'' ''SEQUENCE'' or ''VISUAL''.');
+end
+
 global hd nsstatus
 
 %initialise random number generator
@@ -213,6 +219,10 @@ while hd.blocknum <= length(hd.blocklist)
     
     blockname = hd.blocklist(hd.blocknum,:);
     
+    %randomize slightly the sequence counts for each block
+    seq2count = seq2count + round(rand*4)-2;
+    seq3count = seq3count + round(rand*4)-2;
+    
     %load audio files for this block
     
     if strcmp(blockname,'XCL') || strcmp(blockname,'YCL')
@@ -249,8 +259,8 @@ while hd.blocknum <= length(hd.blocklist)
         
         %     seq23pos = srepint(1)-1+randi(length(srepint),1,seq2count+seq3count);
         
-        seq23pos = cat(2, srepint1(1)-1+randi(length(srepint1),1,(seq2count+seq3count)*.8),... % 80% of oddball sequences with gap of srepint1
-            srepint2(1)-1+randi(length(srepint2),1,(seq2count+seq3count)*.2)); % 20% of oddball sequences with gap of srepint2
+        seq23pos = cat(2, srepint1(1)-1+randi(length(srepint1),1,round((seq2count+seq3count)*.8)),... % 80% of oddball sequences with gap of srepint1
+            srepint2(1)-1+randi(length(srepint2),1,round((seq2count+seq3count)*.2))); % 20% of oddball sequences with gap of srepint2
         
         seq23pos = seq23pos(randperm(length(seq23pos)));
         
@@ -328,6 +338,7 @@ while hd.blocknum <= length(hd.blocklist)
         s = sprintf('Pay attention and count any uncommon sounds');
         TextBounds = Screen('TextBounds', hd.window, s);
         Screen('DrawText',hd.window,s,hd.right/2-TextBounds(3)/2,hd.bottom/2+TextBounds(4),hd.textcolor,hd.bgcolor);
+        hd.sesstype = 1;
         
     elseif strcmp(hd.session,'SEQUENCE')
         s = sprintf('You will hear sequences of 5 sounds');
@@ -336,6 +347,7 @@ while hd.blocknum <= length(hd.blocklist)
         s = sprintf('Pay attention and count any uncommon sequences');
         TextBounds = Screen('TextBounds', hd.window, s);
         Screen('DrawText',hd.window,s,hd.right/2-TextBounds(3)/2,hd.bottom/2+TextBounds(4),hd.textcolor,hd.bgcolor);
+        hd.sesstype = 2;
         
     elseif strcmp(hd.session,'VISUAL')
         hd.targletter = ceil(rand*length(hd.letters));
@@ -346,7 +358,14 @@ while hd.blocknum <= length(hd.blocklist)
         [newX, newY] = Screen('DrawText',hd.window,s,hd.right/2-TextBounds(3)/2,hd.bottom/2-TextBounds(4)/2,hd.textcolor,hd.bgcolor);
         s = sprintf('%s',hd.colornames{hd.targcolor});
         Screen('DrawText',hd.window,s,newX,newY,hd.colors(hd.targcolor,:),hd.bgcolor);
+        hd.sesstype = 3;
+        
     end
+    
+    NetStation('Event','SESS',GetSecs,0.001,'TYPE',hd.sesstype);
+    sendmarker(hd.MARKERS.SESS+hd.sesstype);
+    pause(0.5);
+    
     Screen('Flip',hd.window);
     NetStation('Event','VINS',GetSecs,0.001,'BNUM',hd.blocknum);
     sendmarker(hd.MARKERS.VINS);

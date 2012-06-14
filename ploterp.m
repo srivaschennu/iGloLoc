@@ -107,7 +107,7 @@ for s = 1:numsubj
         end
         
         selectepochs = find(typematches & snummatches & predmatches);
-        fprintf('Condition %s: found %d matching epochs.\n',subjcond{s,c},length(selectepochs));
+        fprintf('\nCondition %s: found %d matching epochs.\n',subjcond{s,c},length(selectepochs));
         
         conddata{s,c} = pop_select(EEG,'trial',selectepochs);
         
@@ -142,10 +142,11 @@ for c = 1:size(erpdata,3)
     end
     
     %plot ERP data
-    figure('Name',condlist{c},'Color','white');
+    figure('Name',condlist{c});
     timtopo(plotdata,chanlocs,...
         'limits',[EEG.times(1)-timeshift EEG.times(end)-timeshift, param.ylim],...
         'plottimes',plottime-timeshift);
+    set(gcf,'Color','white');
 end
 
 % gadiff = diffdata{1};
