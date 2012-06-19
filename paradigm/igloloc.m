@@ -27,15 +27,15 @@ isijitter = 150; %milliseconds
 %Sequence frequencies
 startcount = 20;
 seq1count = 100;
-seq2count = 20;
-seq3count = 20;
+seq2countbase = 20;
+seq3countbase = 20;
 
 if ~isempty(hd) && isstruct(hd)
     fprintf('Found existing run info.\n');
 end
 
-% nshost = '10.0.0.42';
-% nsport = 55513;
+nshost = '10.0.0.42';
+nsport = 55513;
 
 if isempty(nsstatus) && ...
         exist('nshost','var') && ~isempty(nshost) && ...
@@ -220,8 +220,8 @@ while hd.blocknum <= length(hd.blocklist)
     blockname = hd.blocklist(hd.blocknum,:);
     
     %randomize slightly the sequence counts for each block
-    seq2count = seq2count + round(rand*4)-2;
-    seq3count = seq3count + round(rand*4)-2;
+    seq2count = seq2countbase + round(rand*2)-1;
+    seq3count = seq3countbase + round(rand*2)-1;
     
     %load audio files for this block
     

@@ -49,6 +49,8 @@ subjlists = {
     'DFT_igloloc2'
     'MCV_igloloc2'
     'JW_igloloc2'
+    'ED_igloloc2'
+    'AK_igloloc2'
     }
     
     {
@@ -59,5 +61,16 @@ subjlists = {
     'AC_igloloc3'
     'VS_igloloc3'
     'EP_igloloc3'
+    }
+    
+    %UWO
+    {
+    'coma001_igloloc'
+    }
+    
+    {
+    'p004_1206_igloloc'
+    'p006_1206_igloloc'
+    'p007_1206_igloloc'
     }
     };

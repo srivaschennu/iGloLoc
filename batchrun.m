@@ -2,15 +2,15 @@ function batchrun
 
 loadsubj;
 
-subjlist = 3;
+subjlist = 6;
 subjlist = subjlists{subjlist};
 
 for s = 1:length(subjlist)
     subjname = subjlist{s};
     
-%     dataimport(subjname);
-%     epochdata(subjname);
-    rejartifacts2(subjname,2,3,0);
+    % dataimport(subjname);
+    % epochdata(subjname);
+   rejartifacts2(subjname,2,3);
     
     %         ploterp(subjname,{'ls','ld'},[-20 20],1);
     %         saveas(gcf,sprintf('figures/%s_gfp_le.jpg',subjname));

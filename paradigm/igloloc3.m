@@ -25,7 +25,7 @@ isijitter = 150; %milliseconds
 
 %Sequence frequencies
 startcount = 20;
-deviantcnt = [15 15];
+deviantcntbase = [15 15];
 
 if ~isempty(hd) && isstruct(hd)
     fprintf('Found existing run info.\n');
@@ -209,7 +209,7 @@ while hd.blocknum <= length(hd.blocklist)
     blockname = hd.blocklist(hd.blocknum,:);
     
     %randomize slightly the sequence counts for each block
-    deviantcnt = deviantcnt + round(rand(size(deviantcnt))*4)-2;
+    deviantcnt = deviantcntbase + round(rand(size(deviantcntbase))*2)-1;
     
     %setup block stimulus sequence
     
