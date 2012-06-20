@@ -69,7 +69,7 @@ subjlists = {
     }
     
     {
-    'p004_1206_igloloc'
+    %'p004_1206_igloloc' %bad
     'p006_1206_igloloc'
     'p007_1206_igloloc'
     }

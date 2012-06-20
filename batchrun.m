@@ -9,7 +9,10 @@ for s = 1:length(subjlist)
     subjname = subjlist{s};
     
     % dataimport(subjname);
-    % epochdata(subjname);
+%      epochdata(subjname,1);
+%    rejartifacts2([subjname '_epochs'],1,4);
+   %computeic([subjname '_epochs']);
+   rejectic(subjname);
    rejartifacts2(subjname,2,3);
     
     %         ploterp(subjname,{'ls','ld'},[-20 20],1);
