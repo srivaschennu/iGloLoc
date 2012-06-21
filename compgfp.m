@@ -6,7 +6,7 @@ load conds.mat
 
 timeshift = 600; %milliseconds
 
-param = finputcheck(varargin, { 'ylim', 'real', [], [0 40]; ...
+param = finputcheck(varargin, { 'ylim', 'real', [], [0 50]; ...
     'alpha' , 'real' , [], 0.05; ...
     'numrand', 'integer', [], 200; ...
     'corrp', 'string', {'none','fdr','cluster'}, 'cluster'; ...
@@ -189,12 +189,12 @@ end
 figure('Name',sprintf('%s-%s',condlist{1},condlist{2}),'Color','white');
 
 subplot(2,1,1);
-diffcond = mean(conddata{1}.data,3) - mean(conddata{2}.data,3);
 latpnt = find(EEG.times-timeshift >= param.latency(1) & EEG.times-timeshift <= param.latency(2));
-[maxval, maxidx] = max(abs(diffcond(:,latpnt)),[],2);
+[maxval, maxidx] = max(abs(gfpdiff(1,latpnt)),[],2);
 [~, maxmaxidx] = max(maxval);
 plotpnt = latpnt(1)-1+maxidx(maxmaxidx);
 
+diffcond = mean(conddata{1}.data,3) - mean(conddata{2}.data,3);
 plotvals = diffcond(:,plotpnt);
 topoplot(plotvals,chanlocs);
 title(sprintf('%d ms',EEG.times(plotpnt)-timeshift),'FontSize',param.fontsize);
@@ -217,11 +217,16 @@ for p = 2:EEG.pnts
             EEG.times(p)-EEG.times(pstart) param.ylim(2)-param.ylim(1)],...
             'EdgeColor','red','LineWidth',2);
     end
-    if stat.nprob(p) < param.alpha && stat.nprob(p-1) >= param.alpha
-        nstart = p;
-    elseif stat.nprob(p) >= param.alpha && stat.nprob(p-1) < param.alpha
-        rectangle('Position',[EEG.times(nstart)-timeshift param.ylim(1) ...
-            EEG.times(p)-EEG.times(nstart) param.ylim(2)-param.ylim(1)],...
-            'EdgeColor','blue','LineWidth',2);
-    end
+    
+    % SRIVAS - don't plot negative clusters for now... don't know what they
+    % mean
+%     if stat.nprob(p) < param.alpha && stat.nprob(p-1) >= param.alpha
+%         nstart = p;
+%     elseif stat.nprob(p) >= param.alpha && stat.nprob(p-1) < param.alpha
+%         rectangle('Position',[EEG.times(nstart)-timeshift param.ylim(1) ...
+%             EEG.times(p)-EEG.times(nstart) param.ylim(2)-param.ylim(1)],...
+%             'EdgeColor','blue','LineWidth',2);
+%     end
 end
+
+set(gcf,'Color','white');
