@@ -7,7 +7,7 @@ load conds.mat
 timeshift = 600; %milliseconds
 
 param = finputcheck(varargin, { 'ylim', 'real', [], [-12 12]; ...
-    'subcond', 'string', {'on','off'}, 'on'; ...
+    'subcond', 'string', {'on','off'}, 'off'; ...
     'topowin', 'real', [], []; ...
     });
 
@@ -109,23 +109,30 @@ for s = 1:numsubj
         selectepochs = find(typematches & snummatches & predmatches);
         fprintf('\nCondition %s: found %d matching epochs.\n',subjcond{s,c},length(selectepochs));
         
+        if length(selectepochs) == 0
+            fprintf('Skipping %s...\n',subjlist{s});
+            continue;
+        end
+        
         conddata{s,c} = pop_select(EEG,'trial',selectepochs);
         
         erpdata(:,:,c,s) = mean(conddata{s,c}.data,3);
     end
 end
 
-%% PLOTTING
+for s = 1:size(erpdata,4)
+    erpdata(:,:,3,s) = erpdata(:,:,1,s) - erpdata(:,:,2,s);
+end
+condlist = cat(2,condlist,{sprintf('%s-%s',condlist{1},condlist{2})});
 
 if strcmp(param.subcond, 'on') && numcond == 2
-    for s = 1:size(erpdata,4)
-        erpdata(:,:,1,s) = erpdata(:,:,1,s) - erpdata(:,:,2,s);
-    end
-    erpdata = erpdata(:,:,1,:);
-    condlist = {sprintf('%s-%s',condlist{1},condlist{2})};
+    erpdata = erpdata(:,:,3,:);
+    condlist = condlist(3);
 end
 
 erpdata = mean(erpdata,4);
+
+%% PLOTTING
 
 for c = 1:size(erpdata,3)
     plotdata = erpdata(:,:,c);

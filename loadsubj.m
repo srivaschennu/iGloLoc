@@ -51,6 +51,7 @@ subjlists = {
     'JW_igloloc2'
     'ED_igloloc2'
     'AK_igloloc2'
+    'ED2_igloloc2'
     }
     
     {
