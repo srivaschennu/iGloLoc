@@ -56,8 +56,8 @@ tldata = cell(numsubj,numcond);
 for s = 1:numsubj
     EEG = pop_loadset('filename', sprintf('%s.set', subjlist{s}), 'filepath', filepath);
     
-    % %     % rereference
-    % EEG = rereference(EEG,1);
+    % rereference
+    %EEG = rereference(EEG,1);
     %
     %     %%%%% baseline correction relative to 5th tone
     %     bcwin = [-200 0];
@@ -156,7 +156,7 @@ cfg.clusteralpha = alpha;         % alpha level of the sample-specific test stat
 
 cfg.numrandomization = 200;      % number of draws from the permutation distribution
 
-cfg.minnbchan = 2;               % minimum number of neighborhood channels that is required for a selected
+cfg.minnbchan = 5;               % minimum number of neighborhood channels that is required for a selected
 
 % prepare_neighbours determines what sensors may form clusters
 cfg_neighb.method    = 'distance';

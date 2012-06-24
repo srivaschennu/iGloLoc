@@ -49,7 +49,7 @@ conddata = cell(numsubj,numcond);
 for s = 1:numsubj
     EEG = pop_loadset('filename', sprintf('%s.set', subjlist{s}), 'filepath', filepath);
     
-    % %     % rereference
+    % rereference
     % EEG = rereference(EEG,1);
     %
     %     %%%%% baseline correction relative to 5th tone
@@ -120,10 +120,12 @@ for s = 1:numsubj
     end
 end
 
-for s = 1:size(erpdata,4)
-    erpdata(:,:,3,s) = erpdata(:,:,1,s) - erpdata(:,:,2,s);
+if numcond == 2
+    for s = 1:size(erpdata,4)
+        erpdata(:,:,3,s) = erpdata(:,:,1,s) - erpdata(:,:,2,s);
+    end
+    condlist = cat(2,condlist,{sprintf('%s-%s',condlist{1},condlist{2})});
 end
-condlist = cat(2,condlist,{sprintf('%s-%s',condlist{1},condlist{2})});
 
 if strcmp(param.subcond, 'on') && numcond == 2
     erpdata = erpdata(:,:,3,:);
