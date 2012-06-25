@@ -116,6 +116,16 @@ for s = 1:numsubj
         
         conddata{s,c} = pop_select(EEG,'trial',selectepochs);
         
+        if c == numcond
+            if conddata{s,1}.trials > conddata{s,2}.trials
+                fprintf('Equalising trials in condition %s.\n',subjcond{s,1});
+                conddata{s,1} = pop_select(conddata{s,1},'trial',1:conddata{s,2}.trials);
+            elseif conddata{s,2}.trials > conddata{s,1}.trials
+                fprintf('Equalising trials in condition %s.\n',subjcond{s,2});
+                conddata{s,2} = pop_select(conddata{s,2},'trial',1:conddata{s,1}.trials);
+            end
+        end
+
         erpdata(:,:,c,s) = mean(conddata{s,c}.data,3);
     end
 end

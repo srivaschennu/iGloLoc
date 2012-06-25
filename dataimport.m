@@ -3,6 +3,7 @@ function dataimport(basename)
 loadpaths
 
 chanexcl = [1,8,14,17,21,25,32,38,43,44,48,49,56,63,64,68,69,73,74,81,82,88,89,94,95,99,107,113,114,119,120,121,125,126,127,128];
+chanlocfile = 'GSN-HydroCel-129.sfp';
 
 filenames = dir(sprintf('%s%s*', filepath, basename));
 
@@ -25,6 +26,8 @@ elseif isempty(mfffiles)
         for e = 1:length(EEG.event)
             EEG.event(e).codes = {'DUMM',0};
         end
+        chanlocpath = which(chanlocfile);
+        EEG = fixegilocs(EEG,chanlocpath);
     end
     
 else
@@ -81,9 +84,9 @@ EEG = pop_select(EEG,'nochannel',chanexcl);
 lpfreq = 20;
 fprintf('Low-pass filtering below %dHz...\n',lpfreq);
 EEG = pop_eegfilt(EEG, 0, lpfreq, [], [0], 0, 0, 'fir1', 0);
-hpfreq = 0.5;
-fprintf('High-pass filtering above %dHz...\n',hpfreq);
-EEG = pop_eegfilt(EEG, hpfreq, 0, [], [0], 0, 0, 'fir1', 0);
+% hpfreq = 0.5;
+% fprintf('High-pass filtering above %dHz...\n',hpfreq);
+% EEG = pop_eegfilt(EEG, hpfreq, 0, [], [0], 0, 0, 'fir1', 0);
 
 
 EEG.setname = sprintf('%s_orig',basename);
