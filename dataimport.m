@@ -84,9 +84,9 @@ EEG = pop_select(EEG,'nochannel',chanexcl);
 lpfreq = 20;
 fprintf('Low-pass filtering below %dHz...\n',lpfreq);
 EEG = pop_eegfilt(EEG, 0, lpfreq, [], [0], 0, 0, 'fir1', 0);
-% hpfreq = 0.5;
-% fprintf('High-pass filtering above %dHz...\n',hpfreq);
-% EEG = pop_eegfilt(EEG, hpfreq, 0, [], [0], 0, 0, 'fir1', 0);
+hpfreq = 0.5;
+fprintf('High-pass filtering above %dHz...\n',hpfreq);
+EEG = pop_eegfilt(EEG, hpfreq, 0, [], [0], 0, 0, 'fir1', 0);
 
 
 EEG.setname = sprintf('%s_orig',basename);

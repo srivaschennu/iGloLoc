@@ -64,11 +64,18 @@ subjlists = {
     'EP_igloloc3'
     }
     
-    %UWO
+    %Cambridge patients
+    {
+    'p0511v2_igloloc'
+    'p0512_igloloc'
+    }
+    
+    %UWO acute
     {
     'coma001_igloloc'
     }
     
+    %UWO chronic
     {
     %'p004_1206_igloloc' %bad
     'p006_1206_igloloc'

@@ -134,12 +134,12 @@ for n = 1:param.numrand+1
     end
     
     %CALCULATE DIFFERENCE OF GFPs?
-    %     [~, cond1gfp] = evalc('eeg_gfp(mean(cond1data,3)'')');
-    %     [~, cond2gfp] = evalc('eeg_gfp(mean(cond2data,3)'')');
-    %     gfpdiff(n,:) = cond1gfp - cond2gfp;
+    [~, cond1gfp] = evalc('eeg_gfp(mean(cond1data,3)'')');
+    [~, cond2gfp] = evalc('eeg_gfp(mean(cond2data,3)'')');
+    gfpdiff(n,:) = cond1gfp - cond2gfp;
     
     %CALCULATE GFP OF DIFFERENCES?
-    [~, gfpdiff(n,:)] = evalc('eeg_gfp(( mean(cond1data,3) - mean(cond2data,3) )'')');
+    %[~, gfpdiff(n,:)] = evalc('eeg_gfp(( mean(cond1data,3) - mean(cond2data,3) )'')');
     
 end
 close(h_wait);
@@ -220,13 +220,13 @@ for p = 2:EEG.pnts
     
     % SRIVAS - don't plot negative clusters for now... don't know what they
     % mean
-%     if stat.nprob(p) < param.alpha && stat.nprob(p-1) >= param.alpha
-%         nstart = p;
-%     elseif stat.nprob(p) >= param.alpha && stat.nprob(p-1) < param.alpha
-%         rectangle('Position',[EEG.times(nstart)-timeshift param.ylim(1) ...
-%             EEG.times(p)-EEG.times(nstart) param.ylim(2)-param.ylim(1)],...
-%             'EdgeColor','blue','LineWidth',2);
-%     end
+    %     if stat.nprob(p) < param.alpha && stat.nprob(p-1) >= param.alpha
+    %         nstart = p;
+    %     elseif stat.nprob(p) >= param.alpha && stat.nprob(p-1) < param.alpha
+    %         rectangle('Position',[EEG.times(nstart)-timeshift param.ylim(1) ...
+    %             EEG.times(p)-EEG.times(nstart) param.ylim(2)-param.ylim(1)],...
+    %             'EdgeColor','blue','LineWidth',2);
+    %     end
 end
 
 set(gcf,'Color','white');
