@@ -204,6 +204,7 @@ gfpdiff(1,:) = rmbase(gfpdiff(1,:),[],1:find(EEG.times == 0));
 plot((EEG.times(1):1000/EEG.srate:EEG.times(end))-timeshift,gfpdiff(1,:),'LineWidth',2);
 set(gca,'XLim',[EEG.times(1) EEG.times(end)]-timeshift,'YLim',param.ylim,'FontSize',param.fontsize);
 line([0 0],ylim,'Color','black','LineStyle',':');
+line([EEG.times(1) EEG.times(end)]-timeshift,[0 0],'Color','black','LineStyle',':');
 line([EEG.times(plotpnt) EEG.times(plotpnt)]-timeshift,ylim,'Color','black','LineWidth',2,'LineStyle','--');
 xlabel('Time (ms)','FontSize',param.fontsize);
 ylabel('Global field power','FontSize',param.fontsize);
