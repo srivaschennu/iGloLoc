@@ -57,7 +57,7 @@ subjlists = {
     {
     %igloloc v2
     'SS_igloloc3'
-    'SB_igloloc3'
+    %'SB_igloloc3'
     'CS_igloloc3'
     'AC_igloloc3'
     'VS_igloloc3'
