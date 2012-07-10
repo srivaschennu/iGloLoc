@@ -4,8 +4,9 @@ starttime = GetSecs;
 
 global hd nsstatus
 
+PsychJavaTrouble
 %initialise random number generator
-RandStream.setDefaultStream(RandStream('mt19937ar','seed',sum(100*clock)));
+rand('state',sum(100*clock))
 
 %timing parameters
 startwaittime = 3; %seconds
@@ -24,8 +25,8 @@ if ~isempty(hd) && isstruct(hd)
     fprintf('Found existing run info.\n');
 end
 
-nshost = '10.0.0.42';
-nsport = 55513;
+% nshost = '10.0.0.42';
+% nsport = 55513;
 
 if isempty(nsstatus) && ...
         exist('nshost','var') && ~isempty(nshost) && ...
@@ -172,8 +173,8 @@ while hd.blocknum <= length(hd.blocklist)
         
         %     seq23pos = srepint(1)-1+randi(length(srepint),1,seq2count+seq3count);
         
-        seq23pos = cat(2, srepint1(1)-1+randi(length(srepint1),1,round((seq2count+seq3count)*.8)),... % 80% of oddball sequences with gap of srepint1
-            srepint2(1)-1+randi(length(srepint2),1,round((seq2count+seq3count)*.2))); % 20% of oddball sequences with gap of srepint2
+        seq23pos = cat(2, srepint1(1)-1+randi(length(srepint1),[1,round((seq2count+seq3count)*.8)]),... % 80% of oddball sequences with gap of srepint1
+            srepint2(1)-1+randi(length(srepint2),[1,round((seq2count+seq3count)*.2)])); % 20% of oddball sequences with gap of srepint2
         
         seq23pos = seq23pos(randperm(length(seq23pos)));
         
