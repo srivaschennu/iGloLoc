@@ -7,7 +7,7 @@ load conds.mat
 timeshift = 600; %milliseconds
 
 param = finputcheck(varargin, { 'ylim', 'real', [], [-12 12]; ...
-    'subcond', 'string', {'on','off'}, 'off'; ...
+    'subcond', 'string', {'on','off'}, 'on'; ...
     'topowin', 'real', [], []; ...
     });
 
@@ -125,22 +125,21 @@ for s = 1:numsubj
                 conddata{s,2} = pop_select(conddata{s,2},'trial',1:conddata{s,1}.trials);
             end
         end
-
+        
         erpdata(:,:,c,s) = mean(conddata{s,c}.data,3);
     end
 end
 
-if numcond == 2
+if numcond == 2 && strcmp(param.subcond,'on')
     for s = 1:size(erpdata,4)
         erpdata(:,:,3,s) = erpdata(:,:,1,s) - erpdata(:,:,2,s);
     end
     condlist = cat(2,condlist,{sprintf('%s-%s',condlist{1},condlist{2})});
-end
-
-if strcmp(param.subcond, 'on') && numcond == 2
+    
     erpdata = erpdata(:,:,3,:);
     condlist = condlist(3);
 end
+
 
 erpdata = mean(erpdata,4);
 
