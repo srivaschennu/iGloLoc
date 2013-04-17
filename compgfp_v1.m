@@ -11,32 +11,15 @@ load conds.mat
 param = finputcheck(varargin, {
     'alpha' , 'real' , [], 0.05; ...
     'numrand', 'integer', [], 1000; ...
-    'corrp', 'string', {'none','fdr','cluster'}, 'none'; ...
+    'corrp', 'string', {'none','fdr','cluster'}, 'cluster'; ...
     'latency', 'real', [], []; ...
-    'clustsize', 'integer', [], 1; ...
+    'clustsize', 'integer', [], 10; ...
     'chanlist', 'cell', {}, {}; ...
+    'ttesttail', 'integer', [-1 0 1], 0, ...
     });
-
-if isempty(param.latency)
-    param.latency = [0 EEG.times(end)-timeshift];
-end
-
-if isempty(param.chanlist)
-    chanidx = [];
-else
-    for c = 1:length(param.chanlist)
-        chanidx(c) = find(param.chanlist{c},{chanlocs.labels});
-    end
-end
 
 %% SELECTION OF SUBJECTS AND LOADING OF DATA
 loadsubj
-
-if ischar(condlist)
-    condlist = {condlist,'base'};
-elseif iscell(condlist) && length(condlist) == 1
-    condlist{2} = 'base';
-end
 
 if ischar(subjinfo)
     %%%% perform single-trial statistics
@@ -82,30 +65,22 @@ for s = 1:numsubj
     
     % rereference
     EEG = rereference(EEG,1);
-    %
-    %     %%%%% baseline correction relative to 5th tone
-    %     bcwin = [-200 0];
-    %     bcwin = bcwin+(timeshift*1000);
-    %     EEG = pop_rmbase(EEG,bcwin);
-    %     %%%%%
+    
+        %%%%% baseline correction relative to 5th tone
+%         bcwin = [-200 0];
+%         bcwin = bcwin+(timeshift*1000);
+%         EEG = pop_rmbase(EEG,bcwin);
+        %%%%%
     
     % THIS ASSUMES THAT ALL DATASETS HAVE SAME NUMBER OF ELECTRODES
     if s == 1
         chanlocs = EEG.chanlocs;
-        times = EEG.times - timeshift;
-        corrwin = find(times >= param.latency(1) & times <= param.latency(2));
     end
     
     for c = 1:numcond
-        if strcmp(subjcond{s,c},'base')
-            selectevents = conds.(subjcond{s,1}).events;
-            selectsnum = conds.(subjcond{s,1}).snum;
-            selectpred = conds.(subjcond{s,1}).pred;
-        else
-            selectevents = conds.(subjcond{s,c}).events;
-            selectsnum = conds.(subjcond{s,c}).snum;
-            selectpred = conds.(subjcond{s,c}).pred;
-        end
+        selectevents = conds.(subjcond{s,c}).events;
+        selectsnum = conds.(subjcond{s,c}).snum;
+        selectpred = conds.(subjcond{s,c}).pred;
         
         typematches = false(1,length(EEG.epoch));
         snummatches = false(1,length(EEG.epoch));
@@ -114,23 +89,15 @@ for s = 1:numsubj
             
             epochtype = EEG.epoch(ep).eventtype;
             if iscell(epochtype)
-                if length(epochtype) > 1
-                    epochtype = epochtype{cell2mat(EEG.epoch(ep).eventlatency) == 0};
-                else
-                    epochtype = epochtype{1};
-                end
+                epochtype = epochtype{cell2mat(EEG.epoch(ep).eventlatency) == 0};
             end
             if sum(strcmp(epochtype,selectevents)) > 0
                 typematches(ep) = true;
             end
             
             epochcodes = EEG.epoch(ep).eventcodes;
-            if ~isempty(epochcodes) && iscell(epochcodes{1})
-                if length(epochcodes) > 1
-                    epochcodes = epochcodes{cell2mat(EEG.epoch(ep).eventlatency) == 0};
-                else
-                    epochcodes = epochcodes{1};
-                end
+            if iscell(epochcodes{1,1})
+                epochcodes = epochcodes{cell2mat(EEG.epoch(ep).eventlatency) == 0};
             end
             
             snumidx = strcmp('SNUM',epochcodes(:,1)');
@@ -168,12 +135,21 @@ for s = 1:numsubj
                 conddata{s,2} = pop_select(conddata{s,2},'trial',randtrials(1:conddata{s,1}.trials));
             end
         end
-        
-        if strcmp(subjcond{s,c},'base')
-            conddata{s,c}.data(:,corrwin,:) = conddata{s,1}.data(:,1:length(corrwin),:);
-        end
     end
 end
+
+if isempty(param.latency)
+    param.latency = [0 EEG.times(end)-timeshift];
+end
+
+if isempty(param.chanlist)
+    chanidx = [];
+else
+    for c = 1:length(param.chanlist)
+        chanidx(c) = find(param.chanlist{c},{chanlocs.labels});
+    end
+end
+
 
 if strcmp(statmode,'trial')
     cond1data = conddata{1}.data;
@@ -286,53 +262,53 @@ for n = 1:param.numrand+1
 end
 close(h_wait);
 
-stat.valu = zeros(1,size(gfpdiff,2));
-stat.pprob = ones(1,size(gfpdiff,2));
-stat.nprob = ones(1,size(gfpdiff,2));
-stat.pdist = max(gfpdiff(2:end,corrwin),[],2);
-stat.ndist = min(gfpdiff(2:end,corrwin),[],2);
+times = EEG.times - timeshift;
+corrwin = find(times >= param.latency(1) & times <= param.latency(2));
 
-for p = corrwin
+for p = 1:size(gfpdiff,2)
     stat.valu(p) = (gfpdiff(1,p) - mean(gfpdiff(2:end,p)))/(std(gfpdiff(2:end,p))/sqrt(size(gfpdiff,1)-1));
-    stat.pprob(p) = sum(stat.pdist >= gfpdiff(1,p))/param.numrand;
-    stat.nprob(p) = sum(stat.ndist <= gfpdiff(1,p))/param.numrand;
+    stat.pprob(p) = sum(max(gfpdiff(2:end,corrwin),[],2) >= gfpdiff(1,p))/param.numrand;
+    stat.nprob(p) = sum(min(gfpdiff(2:end,corrwin),[],2) <= gfpdiff(1,p))/param.numrand;
 end
 
-stat.pmask = zeros(size(stat.pprob));
-stat.nmask = zeros(size(stat.nprob));
-
-stat.pmask(stat.pprob < param.alpha) = 1;
-stat.nmask(stat.nprob < param.alpha) = 1;
+stat.pprob([1:corrwin(1)-1,corrwin(end)+1:end]) = 1;
+stat.nprob([1:corrwin(1)-1,corrwin(end)+1:end]) = 1;
 
 if strcmp(param.corrp,'fdr')
     % fdr correction
+    stat.pmask = zeros(size(stat.pprob));
     [~,stat.pmask(corrwin)] = fdr(stat.pprob(corrwin),param.alpha);
+    stat.pprob(~stat.pmask) = 1;
+    
+    stat.nmask = zeros(size(stat.nprob));
     [~,stat.nmask(corrwin)] = fdr(stat.nprob(corrwin),param.alpha);
+    stat.nprob(~stat.nmask) = 1;
     
 elseif strcmp(param.corrp,'cluster')
     %cluster-based pvalue correction
-    nsigidx = find(stat.pmask == 0);
+    nsigidx = find(stat.pprob >= param.alpha);
     for n = 1:length(nsigidx)-1
-        if nsigidx(n+1)-nsigidx(n) > 1 && nsigidx(n+1)-nsigidx(n)-1 < param.clustsize
-            stat.pmask(nsigidx(n)+1:nsigidx(n+1)-1) = 0;
+        if nsigidx(n+1)-nsigidx(n) > 1 && nsigidx(n+1)-nsigidx(n) < param.clustsize
+            stat.pprob(nsigidx(n)+1:nsigidx(n+1)-1) = 1;
         end
     end
     
     nsigidx = find(stat.nprob >= param.alpha);
     for n = 1:length(nsigidx)-1
-        if nsigidx(n+1)-nsigidx(n) > 1 && nsigidx(n+1)-nsigidx(n)-1 < param.clustsize
-            stat.nmask(nsigidx(n)+1:nsigidx(n+1)-1) = 0;
+        if nsigidx(n+1)-nsigidx(n) > 1 && nsigidx(n+1)-nsigidx(n) < param.clustsize
+            stat.nprob(nsigidx(n)+1:nsigidx(n+1)-1) = 1;
         end
     end
 end
 
 %% identfy clusters
+
 pstart = 1; nstart = 1;
 pclustidx = 0; nclustidx = 0;
 for p = 2:EEG.pnts
-    if stat.pmask(p) == 1 && stat.pmask(p-1) == 0
+    if stat.pprob(p) < param.alpha && stat.pprob(p-1) >= param.alpha
         pstart = p;
-    elseif (stat.pmask(p) == 0 || p == EEG.pnts) && stat.pmask(p-1) == 1
+    elseif (stat.pprob(p) >= param.alpha || p == EEG.pnts) && stat.pprob(p-1) < param.alpha
         pend = p;
         
         pclustidx = pclustidx+1;
@@ -341,16 +317,16 @@ for p = 2:EEG.pnts
         stat.pclust(pclustidx).win = [EEG.times(pstart) EEG.times(pend-1)]-timeshift;
     end
     
-    if stat.nmask(p) == 1 && stat.nmask(p-1) == 0
-        nstart = p;
-    elseif (stat.nmask(p) == 0 || p == EEG.pnts) && stat.nmask(p-1) == 1
-        nend = p;
-        
-        nclustidx = nclustidx+1;
-        stat.nclust(nclustidx).tstat = mean(stat.valu(nstart:nend-1));
-        stat.nclust(nclustidx).prob = mean(stat.nprob(nstart:nend-1));
-        stat.nclust(nclustidx).win = [EEG.times(nstart) EEG.times(nend-1)]-timeshift;
-    end
+    %     if stat.nprob(p) < param.alpha && stat.nprob(p-1) >= param.alpha
+    %         nstart = p;
+    %     elseif (stat.nprob(p) >= param.alpha || p == EEG.pnts) && stat.nprob(p-1) < param.alpha
+    %         nend = p;
+    %
+    %         nclustidx = nclustidx+1;
+    %         stat.nclust(nclustidx).tstat = mean(stat.valu(nstart:nend-1));
+    %         stat.nclust(nclustidx).prob = mean(stat.pprob(nstart:nend-1));
+    %         stat.nclust(nclustidx).win = [EEG.times(nstart) EEG.times(nend-1)]-timeshift;
+    %     end
 end
 
 stat.gfpdiff = gfpdiff;

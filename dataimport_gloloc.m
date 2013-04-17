@@ -1,4 +1,4 @@
-function dataimport(basename)
+function dataimport_gloloc(basename)
 
 loadpaths
 
@@ -45,16 +45,29 @@ for e = 1:length(EEG.event)
     evtype = EEG.event(e).type;
     
     switch evtype
-        case 'BGIN'
+        case 'break cnt'
             stdcount = 0;
             prevdev = 0;
             firstdev = false;
             
         otherwise
+            switch evtype
+                case 'XXH1'
+                    evbase = 'LAX';
+                case 'XXH2'
+                    evbase = 'LBX';
+                case 'XYH1'
+                    evbase = 'LAY';
+                case 'XYH2'
+                    evbase = 'LBY';
+                case  {'X1f1','X1s2','X2f1','X2s2','Y1f1','Y1s2','Y2f1','Y2s2','XXR1','XXR2','XYR1','XYR2'}
+                    evtype = sprintf('%s1',evbase);
+                case {'XXY1','XXY2','XXX1','XXX2'}
+                    evtype = sprintf('%s3',evbase);
+            end
+            EEG.event(e).type = evtype;
+            
             switch evtype(1:3)
-                case {'XCL','YCL'}
-                    %do not change any markers in control blocks
-                    
                 case {'LAX','LAY','LBX','LBY','RAX','RAY','RBX','RBY'}
                     stimtype = str2double(evtype(4));
                     switch stimtype
@@ -66,11 +79,6 @@ for e = 1:length(EEG.event)
                             end
                             
                         case {2,3}
-%                             if stdcount == 0
-%                                 EEG.event(e).codes = cat(1,EEG.event(e).codes,{'SNUM',1});
-%                             else
-%                                 EEG.event(e).codes = cat(1,EEG.event(e).codes,{'SNUM',stdcount});
-%                             end
                             if firstdev == false
                                 firstdev = true;
                             end

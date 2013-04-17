@@ -1,33 +1,38 @@
-function stat = comperp(statmode,subjinfo,condlist,latency,varargin)
+function stat = compsrc(subjinfo,condlist,latency,scoutname,varargin)
 
 loadpaths
+
+load conds.mat
+
+timeshift = 0.6; %milliseconds
 
 param = finputcheck(varargin, {
     'alpha' , 'real' , [], 0.05; ...
     'numrand', 'integer', [], 1000; ...
     'ttesttail', 'integer', [-1 0 1], 0; ...
-    'testgfp', 'string', {'on' 'off'}, 'off';...
-    'testcnv', 'string', {'on' 'off'}, 'off';...
-    'testlat', 'string', {'on' 'off'}, 'off';...
+    'testcnv', 'string', {'on','off'},'off'; ...
+    'testlat', 'string', {'on','off'},'off'; ...
     });
 
-load conds.mat
-
-timeshift = 0.6; %seconds
-
+%% SELECTION OF SUBJECTS AND LOADING OF DATA
 loadsubj
 
-if strcmp(statmode,'trial') && ischar(subjinfo)
+if ischar(subjinfo)
     %%%% perform single-trial statistics
     subjlist = {subjinfo};
     subjcond = condlist;
+    statmode = 'trial';
     
-elseif strcmp(statmode,'cond') && isnumeric(subjinfo) && length(subjinfo) == 1
+elseif isnumeric(subjinfo) && length(subjinfo) == 1
     %%%% perform within-subject statistics
     subjlist = subjlists{subjinfo};
     subjcond = repmat(condlist,length(subjlist),1);
+    if length(condlist) == 3
+        condlist = {sprintf('%s-%s',condlist{1},condlist{3}),sprintf('%s-%s',condlist{2},condlist{3})};
+    end
+    statmode = 'cond';
     
-elseif strcmp(statmode,'subj') && isnumeric(subjinfo) && length(subjinfo) == 2
+elseif isnumeric(subjinfo) && length(subjinfo) == 2
     %%%% perform across-subject statistics
     subjlist1 = subjlists{subjinfo(1)};
     subjlist2 = subjlists{subjinfo(2)};
@@ -38,96 +43,44 @@ elseif strcmp(statmode,'subj') && isnumeric(subjinfo) && length(subjinfo) == 2
     subjcond = cat(1,repmat(condlist(1),numsubj1,1),repmat(condlist(2),numsubj2,1));
     if length(condlist) == 3
         subjcond = cat(2,subjcond,repmat(condlist(3),numsubj1+numsubj2,1));
+        condlist = {sprintf('%s-%s',condlist{1},condlist{3}),sprintf('%s-%s',condlist{2},condlist{3})};
     end
-else
-    error('Invalid combination of statmode and subjlist!');
+    statmode = 'subj';
 end
 
 numsubj = length(subjlist);
 numcond = size(subjcond,2);
 
 conddata = cell(numsubj,numcond);
-tldata = cell(numsubj,numcond);
 
 %% load and prepare individual subject datasets
-for s = 1:numsubj
-    EEG = pop_loadset('filename', sprintf('%s.set', subjlist{s}), 'filepath', filepath);
-    EEG = sortchan(EEG);
-    
-    % rereference
-    % EEG = rereference(EEG,1);
-    %
-        %%%%% baseline correction relative to 5th tone
-        bcwin = [-200 0];
-        bcwin = bcwin+(timeshift*1000);
-        EEG = pop_rmbase(EEG,bcwin);
-        %%%%%
-    
-    % THIS ASSUMES THAT ALL DATASETS HAVE SAME NUMBER OF ELECTRODES
-    if s == 1
-        chanlocs = EEG.chanlocs;
-    end
-    
+
+for s = 1:length(subjinfo)
     for c = 1:numcond
-        selectevents = conds.(subjcond{s,c}).events;
-        selectsnum = conds.(subjcond{s,c}).snum;
-        selectpred = conds.(subjcond{s,c}).pred;
-        
-        typematches = false(1,length(EEG.epoch));
-        snummatches = false(1,length(EEG.epoch));
-        predmatches = false(1,length(EEG.epoch));
-        for ep = 1:length(EEG.epoch)
-            
-            epochtype = EEG.epoch(ep).eventtype;
-            if iscell(epochtype)
-                epochtype = epochtype{cell2mat(EEG.epoch(ep).eventlatency) == 0};
-            end
-            if sum(strcmp(epochtype,selectevents)) > 0
-                typematches(ep) = true;
-            end
-            
-            epochcodes = EEG.epoch(ep).eventcodes;
-            if iscell(epochcodes{1,1})
-                epochcodes = epochcodes{cell2mat(EEG.epoch(ep).eventlatency) == 0};
-            end
-            
-            snumidx = strcmp('SNUM',epochcodes(:,1)');
-            if exist('selectsnum','var') && ~isempty(selectsnum) && sum(snumidx) > 0
-                if sum(epochcodes{snumidx,2} == selectsnum) > 0
-                    snummatches(ep) = true;
-                end
-            else
-                snummatches(ep) = true;
-            end
-            
-            predidx = strcmp('PRED',epochcodes(:,1)');
-            if exist('selectpred','var') && ~isempty(selectpred) && sum(predidx) > 0
-                if sum(epochcodes{predidx,2} == selectpred) > 0
-                    predmatches(ep) = true;
-                end
-            else
-                predmatches(ep) = true;
-            end
-        end
-        
-        selectepochs = find(typematches & snummatches & predmatches);
-        fprintf('Condition %s: found %d matching epochs.\n',subjcond{s,c},length(selectepochs));
-        
-        conddata{s,c} = pop_select(EEG,'trial',selectepochs);
-        
-        if (strcmp(statmode,'trial') || strcmp(statmode,'cond')) && c == numcond
-            if conddata{s,1}.trials > conddata{s,2}.trials
-                fprintf('Equalising trials in condition %s.\n',subjcond{s,1});
-                randtrials = randperm(conddata{s,1}.trials);
-                conddata{s,1} = pop_select(conddata{s,1},'trial',randtrials(1:conddata{s,2}.trials));
-            elseif conddata{s,2}.trials > conddata{s,1}.trials
-                fprintf('Equalising trials in condition %s.\n',subjcond{s,2});
-                randtrials = randperm(conddata{s,2}.trials);
-                conddata{s,2} = pop_select(conddata{s,2},'trial',randtrials(1:conddata{s,1}.trials));
-            end
+        dataname = sprintf('cond_%d_%s_%s',subjinfo(s),subjcond{s,c},scoutname);
+        load(dataname);
+        eval(sprintf('data = %s;',dataname));
+        for subj = 1:size(data.F{1},1)
+            subjidx = (s-1)*10+subj;
+            %conddata{subjidx,c}.data = detrend(data.F{1}(subj,:));
+            conddata{subjidx,c}.data = data.F{1}(subj,:);
+            conddata{subjidx,c}.srate = 1/(data.Time(2)-data.Time(1));
+            conddata{subjidx,c}.times = data.Time;
+            conddata{subjidx,c}.xmin = data.Time(1);
+            conddata{subjidx,c}.xmax = data.Time(end);
+            conddata{subjidx,c}.pnts = length(data.Time);
+            conddata{subjidx,c}.nbchan = 1;
+            conddata{subjidx,c}.trials = 1;
+            conddata{subjidx,c}.icachansind = [];
+            conddata{subjidx,c}.chanlocs(1).labels = scoutname;
+            conddata{subjidx,c}.chanlocs(1).X = [];
+            %conddata{subjidx,c}.data = rmbase(conddata{subjidx,c}.data,[],find(conddata{subjidx,c}.times-timeshift >= -0.2 & conddata{subjidx,c}.times-timeshift <= 0));
+            conddata{subjidx,c}.data = rmbase(conddata{subjidx,c}.data,[],find(conddata{subjidx,c}.times >= -0.2 & conddata{subjidx,c}.times <= 0));
         end
     end
 end
+
+chanlocs = conddata{1,1}.chanlocs;
 
 %% prepare for fieldtrip statistical analysis
 cfg = [];
@@ -135,12 +88,8 @@ cfg.keeptrials = 'yes';
 cfg.feedback = 'textbar';
 for s = 1:size(conddata,1)
     for c = 1:size(conddata,2)
-        if strcmp(param.testgfp,'on') && (strcmp(statmode, 'cond') || strcmp(statmode,'subj'))
-            tldata{s,c} = ft_timelockanalysis(cfg, convertoft(convertogfp(conddata{s,c})));
-        else
-            ftdata = convertoft(conddata{s,c});
-            tldata{s,c} = ft_timelockanalysis(cfg, ftdata);
-        end
+        ftdata = convertoft(conddata{s,c});
+        tldata{s,c} = ft_timelockanalysis(cfg, ftdata);
     end
 end
 
@@ -161,17 +110,8 @@ cfg.clusteralpha = param.alpha;         % alpha level of the sample-specific tes
 
 cfg.numrandomization = param.numrand;      % number of draws from the permutation distribution
 
-if strcmp(param.testgfp,'off')
-    % prepare_neighbours determines what sensors may form clusters
-    cfg_neighb.method    = 'distance';
-    cfg_neighb.neighbourdist = 4;
-    cfg.neighbours       = ft_prepare_neighbours(cfg_neighb,convertoft(conddata{1,1}));
-    cfg.minnbchan = 2;               % minimum number of neighborhood channels that is required for a selected
-
-else
-    cfg.neighbours = [];
-    cfg.minnbchan = 0;               % minimum number of neighborhood channels that is required for a selected
-end
+cfg.neighbours = [];
+cfg.minnbchan = 0;               % minimum number of neighborhood channels that is required for a selected
 
 if strcmp(statmode,'trial')
     
@@ -197,8 +137,8 @@ elseif strcmp(statmode,'cond')
     cfg_ga.keepindividual = 'yes';
     cond1data = ft_timelockgrandaverage(cfg_ga, tldata{:,1});
     cond2data = ft_timelockgrandaverage(cfg_ga, tldata{:,2});
-    cond1data.avg = squeeze(mean(cond1data.individual,1));
-    cond2data.avg = squeeze(mean(cond2data.individual,1));
+    cond1data.avg = squeeze(mean(cond1data.individual,1))';
+    cond2data.avg = squeeze(mean(cond2data.individual,1))';
     
     design = zeros(2,2*numsubj);
     design(1,:) = [ones(1,numsubj) ones(1,numsubj)+1];
@@ -224,8 +164,8 @@ elseif strcmp(statmode,'subj')
         cond2data.individual = cond2data.individual - cond2sub.individual;
     end
     
-    cond1data.avg = squeeze(mean(cond1data.individual,1));
-    cond2data.avg = squeeze(mean(cond2data.individual,1));
+    cond1data.avg = squeeze(mean(cond1data.individual,1))';
+    cond2data.avg = squeeze(mean(cond2data.individual,1))';
     
     design = zeros(1,numsubj);
     design(1,1:numsubj1) = 1;
@@ -273,7 +213,6 @@ diffcond.cond1avg = cond1data.avg;
 diffcond.cond2avg = cond2data.avg;
 diffcond.avg = cond1data.avg - cond2data.avg;
 
-
 fprintf('\nComparing conditions using %d-tailed %s test\nat alpha of %.2f between %.2f-%.2f sec.\n\n', param.ttesttail, ttesttype, param.alpha, latency);
 cfg.latency = latency + timeshift;            % time interval over which the experimental conditions must be compared (in seconds)
 
@@ -282,37 +221,16 @@ cfg.feedback = 'textbar';
 [stat] = ft_timelockstatistics(cfg, cond1data, cond2data);
 stat.chanlocs = chanlocs;
 
-save2file = sprintf('%s_%s_%s-%s.mat',statmode,num2str(subjinfo),condlist{1},condlist{2});
 stat.cfg = cfg;
 stat.condlist = condlist;
 stat.diffcond = diffcond;
 stat.timeshift = timeshift;
 stat.statmode = statmode;
 stat.subjinfo = subjinfo;
+stat.param = param;
+stat.scoutname = scoutname;
 
 if nargout == 0
-    save(save2file, 'stat');
+    save2file = sprintf('%s_%s_%s-%s_%s.mat',statmode,num2str(subjinfo),condlist{1},condlist{2},scoutname);
+    save(save2file,'stat');
 end
-
-function EEG = convertogfp(EEG)
-
-EEG.nbchan = 1;
-EEG.trials = 1;
-EEG.chanlocs = EEG.chanlocs(find(strcmp('Cz',{EEG.chanlocs.labels})));
-[~, EEG.data] = evalc('eeg_gfp(mean(EEG.data,3)'')''');
-
-function estlat = calclat(times,data,pcarea)
-%estlat = sum(abs(data));
-
-totalarea = sum(abs(data));
-pcarea = totalarea * (pcarea/100);
-
-curarea = 0;
-for t = 1:length(data)
-    curarea = curarea + abs(data(t));
-    if curarea >= pcarea
-        estlat = times(t);
-        return
-    end
-end
-estlat = times(end);

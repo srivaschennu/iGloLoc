@@ -1,4 +1,4 @@
-function igloloc(session)
+function igloloc_intra_short(session)
 
 starttime = GetSecs;
 
@@ -15,7 +15,7 @@ end
 global hd nsstatus
 
 %initialise random number generator
-RandStream.setDefaultStream(RandStream('mt19937ar','seed',sum(100*clock)));
+rand('state',sum(100*clock));
 
 %timing parameters
 startwaittime = 3; %seconds
@@ -25,17 +25,17 @@ isi = 850; %milliseconds
 isijitter = 150; %milliseconds
 
 %Sequence frequencies
-startcount = 20;
-seq1count = 100;
-seq2countbase = 20;
-seq3countbase = 20;
+startcount = 10;
+seq1count = 60;
+seq2countbase = 12;
+seq3countbase = 12;
 
 if ~isempty(hd) && isstruct(hd)
     fprintf('Found existing run info.\n');
 end
 
-nshost = '10.0.0.42';
-nsport = 55513;
+% nshost = '10.0.0.42';
+% nsport = 55513;
 
 if isempty(nsstatus) && ...
         exist('nshost','var') && ~isempty(nshost) && ...
@@ -48,6 +48,22 @@ if isempty(nsstatus) && ...
     end
 end
 NetStation('Synchronize');
+
+global pportobj pportaddr
+
+pportaddr = '378';
+
+if exist('pportaddr','var') && ~isempty(pportaddr)
+    fprintf('Connecting to parallel port 0x%s.\n', pportaddr);
+    pportaddr = hex2dec(pportaddr);
+
+    pportobj = io32;
+    io32status = io32(pportobj);
+    
+    if io32status ~= 0
+        error('io32 failure: could not initialise parallel port.\n');
+    end
+end
 
 %init psychtoolbox sound
 if ~isfield(hd,'pahandle')
@@ -89,15 +105,10 @@ if ~isfield(hd,'blocklist')
     blocklist = [
         'LAX'
         'LAY'
-        'LBX'
-        'LBY'
-        'RAX'
-        'RAY'
         'RBX'
         'RBY'
-        'XCL'
-        'YCL'
         ];
+
     
     xblocks = find(blocklist(:,3) == 'X');
     blockorder = zeros(length(blocklist),1);
@@ -120,7 +131,7 @@ if ~isfield(hd,'blocklist')
     clear blocklist
     hd.blocknum = 1;
     
-    load('MARKERS.mat');
+    load('MARKERS_short.mat');
     hd.MARKERS = MARKERS;
 end
 
@@ -208,12 +219,12 @@ end
 
 %loop through block list
 while hd.blocknum <= length(hd.blocklist)
-    if psychpausefor(30)
+    if psychpausefor(5)
         break;
     end
     
     NetStation('Synchronize');
-    pause(1);    
+    pause(1);
     NetStation('StartRecording');
     pause(1);
     
@@ -227,13 +238,8 @@ while hd.blocknum <= length(hd.blocklist)
     
     %load audio files for this block
     
-    if strcmp(blockname,'XCL') || strcmp(blockname,'YCL')
-        
-        if strcmp(blockname,'XCL')
-            ctrlaudio = {'LAX2','LBX2','RAX2','RBX2'};
-        elseif strcmp(blockname,'YCL')
-            ctrlaudio = {'LAY2','LBY2','RAY2','RBY2'};
-        end
+    if strcmp(blockname,'CTL')
+        ctrlaudio = {'LAX2','LAY2','RBX2','RBY2'};
         
         seqaudio = cell(4,2);
         for s = 1:4
@@ -261,8 +267,8 @@ while hd.blocknum <= length(hd.blocklist)
         
         %     seq23pos = srepint(1)-1+randi(length(srepint),1,seq2count+seq3count);
         
-        seq23pos = cat(2, srepint1(1)-1+randi(length(srepint1),1,round((seq2count+seq3count)*.8)),... % 80% of oddball sequences with gap of srepint1
-            srepint2(1)-1+randi(length(srepint2),1,round((seq2count+seq3count)*.2))); % 20% of oddball sequences with gap of srepint2
+        seq23pos = cat(2, srepint1(1)-1+randi(length(srepint1),[1,round((seq2count+seq3count)*.8)]),... % 80% of oddball sequences with gap of srepint1
+            srepint2(1)-1+randi(length(srepint2),[1,round((seq2count+seq3count)*.2)])); % 20% of oddball sequences with gap of srepint2
         
         seq23pos = seq23pos(randperm(length(seq23pos)));
         
@@ -324,7 +330,7 @@ while hd.blocknum <= length(hd.blocklist)
     Screen('Flip',hd.window);
     
     NetStation('Event','BGIN',GetSecs,0.001,'BNUM',hd.blocknum);
-    sendmarker(hd.MARKERS.BGIN+hd.blocknum);
+    sendmarker_io32(hd.MARKERS.BGIN+hd.blocknum);
     pause(1);
     
     %play instruction
@@ -365,12 +371,12 @@ while hd.blocknum <= length(hd.blocklist)
     end
     
     NetStation('Event','SESS',GetSecs,0.001,'TYPE',hd.sesstype);
-    sendmarker(hd.MARKERS.SESS+hd.sesstype);
+    sendmarker_io32(hd.MARKERS.SESS+hd.sesstype);
     pause(0.5);
     
     Screen('Flip',hd.window);
     NetStation('Event','VINS',GetSecs,0.001,'BNUM',hd.blocknum);
-    sendmarker(hd.MARKERS.VINS);
+    sendmarker_io32(hd.MARKERS.VINS);
     pause(8);
     
     Priority(MaxPriority(0));
@@ -387,7 +393,7 @@ while hd.blocknum <= length(hd.blocklist)
                 PsychPortAudio('FillBuffer',hd.pahandle,seqaudio{eventlist(curevent,2),2});
                 PsychPortAudio('Start',hd.pahandle,1,0,1);
                 NetStation('Event',seqaudio{eventlist(curevent,2),1},GetSecs,0.001,'BNUM',hd.blocknum);
-                sendmarker(hd.MARKERS.(blockname) + eventlist(curevent,2));
+                sendmarker_io32(hd.MARKERS.(blockname) + eventlist(curevent,2));
                 
                 %this pause prevents audio distortions on windows
                 pause(0.02);
@@ -404,10 +410,10 @@ while hd.blocknum <= length(hd.blocklist)
                 Screen('Flip',hd.window);
                 if eventlist(curevent,2) == hd.targitem
                     NetStation('Event','TARG',GetSecs,0.001,'BNUM',hd.blocknum,'TIDX',eventlist(curevent,2));
-                    sendmarker(hd.MARKERS.TARG + eventlist(curevent,2));
+                    sendmarker_io32(hd.MARKERS.TARG + eventlist(curevent,2));
                 else
                     NetStation('Event','DIST',GetSecs,0.001,'BNUM',hd.blocknum,'DIDX',eventlist(curevent,2));
-                    sendmarker(hd.MARKERS.DIST + eventlist(curevent,2));
+                    sendmarker_io32(hd.MARKERS.DIST + eventlist(curevent,2));
                 end
                 
             end
@@ -422,7 +428,7 @@ while hd.blocknum <= length(hd.blocklist)
     
     pause(1);
     NetStation('Event','BEND',GetSecs,0.001,'BNUM',hd.blocknum);
-    sendmarker(hd.MARKERS.BEND+hd.blocknum);
+    sendmarker_io32(hd.MARKERS.BEND+hd.blocknum);
     
     pause(1);
     NetStation('StopRecording');

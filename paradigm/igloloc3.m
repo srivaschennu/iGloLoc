@@ -201,6 +201,8 @@ while hd.blocknum <= length(hd.blocklist)
         break;
     end
     
+    NetStation('Synchronize');
+    pause(1);
     NetStation('StartRecording');
     pause(1);
     

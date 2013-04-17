@@ -17,8 +17,8 @@ isijitter = 150; %milliseconds
 %Sequence frequencies
 startcount = 20;
 seq1count = 100;
-seq2count = 20;
-seq3count = 20;
+seq2countbase = 20;
+seq3countbase = 20;
 
 if ~isempty(hd) && isstruct(hd)
     fprintf('Found existing run info.\n');
@@ -112,17 +112,23 @@ end
 
 %loop through block list
 while hd.blocknum <= length(hd.blocklist)
-    if pausefor(30)
+    if pausefor(15)
         break;
     end
     
+    NetStation('Synchronize');
+    pause(1);
     NetStation('StartRecording');
     pause(1);
     
     tic;
     
     blockname = hd.blocklist(hd.blocknum,:);
-    
+
+    %randomize slightly the sequence counts for each block
+    seq2count = seq2countbase + round(rand*2)-1;
+    seq3count = seq3countbase + round(rand*2)-1;    
+
     %load audio files for this block
     
     if strcmp(blockname,'CTL')

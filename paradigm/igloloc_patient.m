@@ -110,8 +110,8 @@ if ~isfield(hd,'blocklist')
     clear blocklist
     hd.blocknum = 1;
     
-    load('MARKERS.mat');
-    hd.MARKERS = MARKERS;    
+%     load('MARKERS.mat');
+%     hd.MARKERS = MARKERS;    
 end
 
 if ~isfield(hd,'instraudio')
@@ -121,10 +121,12 @@ end
 
 %loop through block list
 while hd.blocknum <= length(hd.blocklist)
-    if pausefor(30)
+    if pausefor(15)
         break;
     end
     
+    NetStation('Synchronize');
+    pause(1);
     NetStation('StartRecording');
     pause(1);
     
@@ -205,14 +207,14 @@ while hd.blocknum <= length(hd.blocklist)
     end
     
     NetStation('Event','BGIN',GetSecs,0.001,'BNUM',hd.blocknum);
-    sendmarker(hd.MARKERS.BGIN+hd.blocknum);
+    %sendmarker(hd.MARKERS.BGIN+hd.blocknum);
     pause(1);
     
     %play instruction
     PsychPortAudio('FillBuffer',hd.pahandle,hd.instraudio);
     PsychPortAudio('Start',hd.pahandle,1,0,1);
     NetStation('Event','INST',GetSecs,0.001,'BNUM',hd.blocknum);
-    sendmarker(hd.MARKERS.VINS);
+    %sendmarker(hd.MARKERS.VINS);
     PsychPortAudio('Stop',hd.pahandle,1);
     
     Priority(MaxPriority(0));
@@ -228,7 +230,7 @@ while hd.blocknum <= length(hd.blocklist)
             PsychPortAudio('FillBuffer',hd.pahandle,seqaudio{eventlist(curevent,2),2});
             PsychPortAudio('Start',hd.pahandle,1,0,1);
             NetStation('Event',seqaudio{eventlist(curevent,2),1},GetSecs,0.001,'BNUM',hd.blocknum);
-            sendmarker(hd.MARKERS.(blockname) + eventlist(curevent,2));
+            %sendmarker(hd.MARKERS.(blockname) + eventlist(curevent,2));
             curevent = curevent + 1;
             
             %Wait till sound stops playing... ensures better playback on
@@ -244,7 +246,7 @@ while hd.blocknum <= length(hd.blocklist)
     
     pause(1);
     NetStation('Event','BEND',GetSecs,0.001,'BNUM',hd.blocknum);
-    sendmarker(hd.MARKERS.BEND+hd.blocknum);
+    %sendmarker(hd.MARKERS.BEND+hd.blocknum);
     
     pause(1);
     NetStation('StopRecording');

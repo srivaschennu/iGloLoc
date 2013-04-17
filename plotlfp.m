@@ -1,4 +1,4 @@
-function ploterp(subjinfo,condlist,varargin)
+function plotlfp(subjinfo,condlist,varargin)
 
 loadpaths
 
@@ -6,11 +6,37 @@ load conds.mat
 
 timeshift = 600; %milliseconds
 
-param = finputcheck(varargin, { 'ylim', 'real', [], [-12 12]; ...
+param = finputcheck(varargin, { 'ylim', 'real', [], [0 15]; ...
     'subcond', 'string', {'on','off'}, 'on'; ...
-    'topowin', 'real', [], []; ...
     'legendstrings', 'cell', {}, condlist; ...
+    'plotchan','cell', {}, {}; ...
+    'zscore', 'string', {'on','off'}, 'on'; ...
+    'topowin', 'real', [], []; ...    
     });
+
+gridinfo = {
+    'Gri' [
+    64:-1:57
+    56:-1:49
+    48:-1:41
+    40:-1:33
+    32:-1:25
+    24:-1:17
+    16:-1:9
+    8:-1:1
+    ]
+    
+    'GTO' [
+    1:8
+    9:16
+    ]
+    
+    'GPI' [
+    1:8
+    9:16
+    ]
+    
+    };
 
 %% SELECTION OF SUBJECTS AND LOADING OF DATA
 
@@ -57,11 +83,11 @@ for s = 1:numsubj
     % %     rereference
     %     EEG = rereference(EEG,1);
     
-        %%%%% baseline correction relative to 5th tone
-        bcwin = [-200 0];
-        bcwin = bcwin+timeshift;
-        EEG = pop_rmbase(EEG,bcwin);
-        %%%%%
+    %%%%% baseline correction relative to 5th tone
+    bcwin = [-200 0];
+    bcwin = bcwin+timeshift;
+    EEG = pop_rmbase(EEG,bcwin);
+    %%%%%
     
     % THIS ASSUMES THAT ALL DATASETS HAVE SAME NUMBER OF ELECTRODES
     if s == 1
@@ -121,28 +147,15 @@ for s = 1:numsubj
         
         conddata{s,c} = pop_select(EEG,'trial',selectepochs);
         
-        saveEEG = conddata{s,c};
-        saveEEG.data = mean(conddata{s,c}.data,3);
-        saveEEG.setname = sprintf('%s_%s_%s',statmode,subjlist{s},subjcond{s,c});
-        saveEEG.filename = [saveEEG.setname '.set'];
-        saveEEG.trials = 1;
-        saveEEG.event = saveEEG.event(1);
-        saveEEG.event(1).type = saveEEG.setname;
-        saveEEG.epoch = saveEEG.epoch(1);
-        saveEEG.epoch(1).eventtype = saveEEG.setname;
-        pop_saveset(saveEEG,'filepath',filepath,'filename',saveEEG.filename);
-        
-%         if (strcmp(statmode,'trial') || strcmp(statmode,'cond')) && c == numcond
-%             if conddata{s,1}.trials > conddata{s,2}.trials
-%                 fprintf('Equalising trials in condition %s.\n',subjcond{s,1});
-%                 randtrials = randperm(conddata{s,1}.trials);
-%                 conddata{s,1} = pop_select(conddata{s,1},'trial',randtrials(1:conddata{s,2}.trials));
-%             elseif conddata{s,2}.trials > conddata{s,1}.trials
-%                 fprintf('Equalising trials in condition %s.\n',subjcond{s,2});
-%                 randtrials = randperm(conddata{s,2}.trials);
-%                 conddata{s,2} = pop_select(conddata{s,2},'trial',randtrials(1:conddata{s,1}.trials));
-%             end
-%         end
+                if c > 1 && c == numcond
+                    if conddata{s,1}.trials > conddata{s,2}.trials
+                        fprintf('Equalising trials in condition %s.\n',subjcond{s,1});
+                        conddata{s,1} = pop_select(conddata{s,1},'trial',1:conddata{s,2}.trials);
+                    elseif conddata{s,2}.trials > conddata{s,1}.trials
+                        fprintf('Equalising trials in condition %s.\n',subjcond{s,2});
+                        conddata{s,2} = pop_select(conddata{s,2},'trial',1:conddata{s,1}.trials);
+                    end
+                end
         
         erpdata(:,:,c,s) = mean(conddata{s,c}.data,3);
     end
@@ -182,103 +195,87 @@ end
 
 %% PLOTTING
 
+if isempty(param.plotchan)
+    plotchan = 1:EEG.nbchan;
+else
+    plotchan = [];
+    for chan = 1:length(param.plotchan)
+        plotchan = cat(1,plotchan,find(strcmp(param.plotchan{chan},{EEG.chanlocs.labels})));
+    end
+end
+
+if isempty(plotchan)
+    fprintf('No channels selected for plotting!\n');
+    return;
+end
+
+linewidth = 2;
+fontsize = 20;
+
+times = (EEG.times-timeshift)/1000;
+blidx = 1:(find(EEG.times == 0)-1);
+
 for c = 1:size(erpdata,3)
-    plotdata = erpdata(:,:,c);
+    plotdata = erpdata(plotchan,:,c);
     
     if isempty(param.topowin)
         param.topowin = [0 EEG.times(end)-timeshift];
     end
     latpnt = find(EEG.times-timeshift >= param.topowin(1) & EEG.times-timeshift <= param.topowin(2));
-    [maxval, maxidx] = max(abs(plotdata(:,latpnt)),[],2);
-    [~, maxmaxidx] = max(maxval);
-    plottime = EEG.times(latpnt(1)-1+maxidx(maxmaxidx));
-    if plottime == EEG.times(end)
-        plottime = EEG.times(end-1);
+    [~, maxidx] = max(abs(plotdata(:,latpnt)),[],2);
+    plotidx = latpnt(1)-1+maxidx;
+
+    if strcmp(param.zscore,'on')
+        %calculate absolute z-score
+        for chan = 1:size(plotdata,1)
+            plotdata(chan,:) = abs((plotdata(chan,:) - mean(plotdata(chan,blidx)))/std(plotdata(chan,blidx)));
+        end
+        param.ylabel = 'LFP z-score';
+    else
+        param.ylabel = 'LFP (uV)';
+    end
+
+    %plot LFP data
+    figure('Name',condlist{c});
+    subplot(2,1,1);
+    grididx = find(strncmp(param.plotchan{1}(1:3),{EEG.chanlocs.labels},3));
+    gridlayout = gridinfo{strcmp(param.plotchan{1}(1:3),gridinfo(:,1)),2};
+
+    datavals = zeros(size(gridlayout));
+    gridchan = {EEG.chanlocs(grididx).labels};
+    for g = 1:length(gridchan)
+        datavals(gridlayout == str2double(gridchan{g}(4:end))) = erpdata(grididx(g),plotidx);
     end
     
-    %plot ERP data
-    figure('Name',condlist{c});
-    timtopo(plotdata,chanlocs,...
-        'limits',[EEG.times(1)-timeshift EEG.times(end)-timeshift, param.ylim],...
-        'plottimes',plottime-timeshift);
-    set(gcf,'Color','white');
+    [xvals,yvals] = meshgrid(1:0.05:size(datavals,2),1:0.05:size(datavals,1));
+    gdatavals = griddata(1:size(datavals,2),1:size(datavals,1),datavals,xvals,yvals,'v4');
+    imagesc(1:size(datavals,2),1:size(datavals,1),gdatavals);
+    axespos = get(gca,'Position');
+    set(gca,'XTick',[],'YTick',[],...
+    'Position',[axespos(1)+(axespos(3)-axespos(4))/2 axespos(2) axespos(4) axespos(4)]);
+    title(sprintf('%.3f sec',times(plotidx)),'FontSize',fontsize);
+    colorbar
+    caxis(param.ylim);
+    for row = 1:size(gridlayout,1)
+        for col = 1:size(gridlayout,2)
+            text(col,row,num2str(gridlayout(row,col)));
+        end
+    end
     
-    %saveEEG = pop_select(EEG,'point',[latpnt(1) latpnt(end)+1]);
-    %saveEEG.data = plotdata(:,latpnt);
-%     saveEEG = EEG;
-%     saveEEG.data = plotdata;
-%     if strcmp(statmode,'cond') || strcmp(statmode,'trial')
-%         saveEEG.setname = sprintf('%s_%s_%s',statmode,num2str(subjinfo),condlist{c});
-%     elseif strcmp(statmode,'subj')
-%         saveEEG.setname = sprintf('%s_%s_%s',statmode,num2str(subjinfo(c)),condlist{c});
-%     end
-%     saveEEG.filename = [saveEEG.setname '.set'];
-%     saveEEG.trials = 1;
-%     saveEEG.event = saveEEG.event(1);
-%     saveEEG.event(1).type = saveEEG.setname;
-%     saveEEG.epoch = saveEEG.epoch(1);
-%     saveEEG.epoch(1).eventtype = saveEEG.setname;
-%     pop_saveset(saveEEG,'filepath',filepath,'filename',saveEEG.filename);
+    subplot(2,1,2);
+    plot(times,plotdata','LineWidth',linewidth*1.5);
+    set(gca,'YLim',param.ylim,'XLim',[times(1) times(end)],'XTick',times(1):0.2:times(end),...
+        'FontSize',fontsize);
+    xlabel('Time relative to 5th tone (sec)','FontSize',fontsize);
+    ylabel(param.ylabel,'FontSize',fontsize);
+    legend({EEG.chanlocs(plotchan).labels});
+    
+    line([times(plotidx) times(plotidx)],ylim,'LineWidth',linewidth,'Color','red','LineStyle','--');
+    line([times(1) times(end)],[0 0],'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.60 -0.60],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.45 -0.45],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.30 -0.30],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.15 -0.15],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([    0     0],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    set(gcf,'Color','white');
 end
-% 
-% fontname = 'Helvetica';
-% fontsize = 20;
-% linewidth = 2;
-% plotchan = 'E10';
-% plotchan = find(strcmp(plotchan,{EEG.chanlocs.labels}));
-% 
-% colorlist = {
-%     'local standard'    [0         0    1.0000]
-%     'local deviant'     [0    0.5000         0]
-%     'global standard'   [1.0000    0         0]
-%     'global deviant'    [0    0.7500    0.7500]
-%     'inter-aural dev.'  [0.7500    0    0.7500]
-%     'inter-aural ctrl.' [0.7500    0.7500    0]
-%     'attend tones'      [0    0.5000    0.5000]
-%     'attend sequences'  [0.5000    0    0.5000]
-%     'attend visual'     [0    0.2500    0.7500]
-%     'early glo. std.'   [0.5000    0.5000    0]
-%     'late glo. std.'    [0.2500    0.5000    0]
-%     };
-% 
-% curcolororder = get(gca,'ColorOrder');
-% colororder = zeros(length(param.legendstrings),3);
-% for str = 1:length(param.legendstrings)
-%     cidx = strcmp(param.legendstrings{str},colorlist(:,1));
-%     if sum(cidx) == 1
-%         colororder(str,:) = colorlist{cidx,2};
-%     else
-%         colororder(str,:) = curcolororder(str,:);
-%     end
-% end
-% 
-% newfig = false;
-% 
-% if newfig
-% figure;
-% figpos = get(gcf,'Position');
-% set(gcf,'Position',[figpos(1) figpos(2) figpos(3)*2 figpos(4)]);
-% end
-% 
-% set(gca,'ColorOrder',colororder);
-% hold all
-% plot(EEG.times-timeshift,squeeze(erpdata(plotchan,:,:)),'LineWidth',linewidth*1.5);
-% for c = 1:size(erpdata,3)
-%         condfit = polyfit(EEG.times(latpnt),erpdata(plotchan,latpnt,c),1);
-%         plot(EEG.times-timeshift,polyval(condfit,EEG.times),'LineWidth',linewidth,'LineStyle','--','Color',colororder(c,:));
-% end
-% 
-% if newfig
-%     set(gca,'XLim',[EEG.times(1) EEG.times(end)]-timeshift,'YLim',param.ylim,'XTick',EEG.times(1)-timeshift:200:EEG.times(end)-timeshift,...
-%         'FontName',fontname,'FontSize',fontsize);
-%     line([EEG.times(1) EEG.times(end)]-timeshift,[0 0],'LineWidth',linewidth,'Color','black','LineStyle',':');
-%     line([0 0],param.ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-%     xlabel('Time relative to 5th tone (sec) ','FontName',fontname,'FontSize',fontsize);
-%     ylabel('Amplitude (uV)','FontName',fontname,'FontSize',fontsize);
-%     box on
-%     legend(param.legendstrings,'Location','NorthWest');
-% else
-%     [~,~,~,curlegend] = legend;
-%     legend(cat(2,curlegend,param.legendstrings),'Location','NorthWest');
-% end
-% set(gcf,'Color','white');
