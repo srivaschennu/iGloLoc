@@ -81,4 +81,15 @@ subjlists = {
     'p006_1206_igloloc'
     'p007_1206_igloloc'
     }
+    
+    %Maria
+    {
+    'EmanuelCastilo_GloLo'
+    'IgnacioRojas_GloLo'
+    'JuampiAparicio_GloLo' %noisy
+    'MarcoLeyva_GloLo' %noisy
+    'MarcosSalguero_GloLo'
+    'MartinBerro_GloLo'
+    'YagoSaavedra_GloLo'
+    }
     };

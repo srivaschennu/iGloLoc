@@ -9,12 +9,14 @@ for s = 1:length(subjlist)
     subjname = subjlist{s};
     
     %    dataimport(subjname);
-    % epochdata(subjname);
-    %rejartifacts2([subjname '_epochs'],1,4);
-    % computeic([subjname '_epochs']);
+    dataimport_maria(subjname);
+%     
+%     epochdata(subjname,1);
+%     rejartifacts2([subjname '_epochs'],1,4,[],[],1000,500);
+%     computeic([subjname '_epochs']);
     %rejectic(subjname);
     %rejartifacts2(subjname,2,1,0,[],1000,500);
-    %rejartifacts2(subjname,2,3);
+%     rejartifacts2(subjname,2,1);
     
     %         ploterp(subjname,{'ls','ld'},[-20 20],1);
     %         saveas(gcf,sprintf('figures/%s_gfp_le.jpg',subjname));
@@ -90,9 +92,9 @@ for s = 1:length(subjlist)
     %         batchres(s,:) = NaN;
     %     end
 
-        EEG = pop_loadset('filepath',filepath,'filename',[subjname '.set'],'loadmode','info');
-        batchres(s,1) = length(EEG.rejchan);
-        batchres(s,2) = length(EEG.rejepoch);
+%         EEG = pop_loadset('filepath',filepath,'filename',[subjname '.set'],'loadmode','info');
+%         batchres(s,1) = length(EEG.rejchan);
+%         batchres(s,2) = length(EEG.rejepoch);
 
 %     EEG = pop_loadset('filepath',filepath,'filename',[subjname '_orig.set']);
 %     for e = 1:length(EEG.event)
@@ -121,4 +123,4 @@ for s = 1:length(subjlist)
 % copyfile(['/Volumes/wbicdata/iGloLoc/' subjname '.fdt'],[filepath subjname '.fdt']);
 end
 
-save(sprintf('batch %s.mat',datestr(now)),'batchres');
+% save(sprintf('batch %s.mat',datestr(now)),'batchres');

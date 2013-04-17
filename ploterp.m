@@ -58,9 +58,9 @@ for s = 1:numsubj
     %     EEG = rereference(EEG,1);
     
         %%%%% baseline correction relative to 5th tone
-        bcwin = [-200 0];
-        bcwin = bcwin+timeshift;
-        EEG = pop_rmbase(EEG,bcwin);
+%         bcwin = [-200 0];
+%         bcwin = bcwin+timeshift;
+%         EEG = pop_rmbase(EEG,bcwin);
         %%%%%
     
     % THIS ASSUMES THAT ALL DATASETS HAVE SAME NUMBER OF ELECTRODES

@@ -5,7 +5,7 @@ if ~exist('icamode','var') || isempty(icamode)
 end
 keepica = true;
 
-copyartifacts = false;
+copyartifacts = true;
 
 eventlist = {
     'LAX'
@@ -74,9 +74,9 @@ if ischar(basename)
         fprintf('Found %d bad channels and %d bad trials in existing file.\n', length(EEG.rejchan), length(EEG.rejepoch));
         
         EEG = pop_select(EEG,'nochannel',{EEG.rejchan.labels});
-        EEG = eeg_interp(EEG, EEG.rejchan);
         EEG = pop_select(EEG, 'notrial', EEG.rejepoch);
-        EEG = rereference(EEG,3);
+%         EEG = eeg_interp(EEG, EEG.rejchan);
+%         EEG = rereference(EEG,3);
     end
     
     fprintf('Saving set %s%s.\n',EEG.filepath,EEG.filename);
