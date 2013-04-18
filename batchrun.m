@@ -9,18 +9,22 @@ for s = 1:length(subjlist)
     subjname = subjlist{s};
     
     %    dataimport(subjname);
-    dataimport_maria(subjname);
+%     dataimport_maria(subjname);
 %     
 %     epochdata(subjname,1);
 %     rejartifacts2([subjname '_epochs'],1,4,[],[],1000,500);
 %     computeic([subjname '_epochs']);
-    %rejectic(subjname);
+%     rejectic(subjname);
     %rejartifacts2(subjname,2,1,0,[],1000,500);
 %     rejartifacts2(subjname,2,1);
     
-    %         ploterp(subjname,{'ls','ld'},[-20 20],1);
-    %         saveas(gcf,sprintf('figures/%s_gfp_le.jpg',subjname));
-    %         close(gcf);
+            ploterp(subjname,{'dev'},'topowin',[100 250]);
+            saveas(gcf,sprintf('figures/%s_dev.jpg',subjname));
+            close(gcf);
+            
+            ploterp(subjname,{'std'},'topowin',[100 250]);
+            saveas(gcf,sprintf('figures/%s_std.jpg',subjname));
+            close(gcf);            
     %
     %         ploterp(subjname,{'gs','gd'},[-20 20],1);
     %         saveas(gcf,sprintf('figures/%s_gfp_ge.jpg',subjname));

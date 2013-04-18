@@ -89,7 +89,7 @@ subjlists = {
     'JuampiAparicio_GloLo' %noisy
     'MarcoLeyva_GloLo' %noisy
     'MarcosSalguero_GloLo'
-    'MartinBerro_GloLo'
+    'MartinBerro_GloLo' %noisy
     'YagoSaavedra_GloLo'
     }
     };

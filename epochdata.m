@@ -73,8 +73,13 @@ if ischar(basename)
         end
         fprintf('Found %d bad channels and %d bad trials in existing file.\n', length(EEG.rejchan), length(EEG.rejepoch));
         
-        EEG = pop_select(EEG,'nochannel',{EEG.rejchan.labels});
-        EEG = pop_select(EEG, 'notrial', EEG.rejepoch);
+        if ~isempty(EEG.rejchan)
+            EEG = pop_select(EEG,'nochannel',{EEG.rejchan.labels});
+        end
+        
+        if ~isempty(EEG.rejepoch)
+            EEG = pop_select(EEG, 'notrial', EEG.rejepoch);
+        end
 %         EEG = eeg_interp(EEG, EEG.rejchan);
 %         EEG = rereference(EEG,3);
     end
