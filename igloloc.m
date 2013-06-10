@@ -1,8 +1,8 @@
-function igloloc_short
+function igloloc
 
 starttime = GetSecs;
 
-global hd
+global hd nsstatus
 
 %initialise random number generator
 RandStream.setDefaultStream(RandStream('mt19937ar','seed',sum(100*clock)));
@@ -27,7 +27,7 @@ end
 nshost = '10.0.0.42';
 nsport = 55513;
 
-if ~isfield(hd,'nsstatus') && ...
+if isempty(nsstatus) && ...
         exist('nshost','var') && ~isempty(nshost) && ...
         exist('nsport','var') && nsport ~= 0
     fprintf('Connecting to Net Station.\n');
@@ -36,7 +36,6 @@ if ~isfield(hd,'nsstatus') && ...
         error('Could not connect to NetStation host %s:%d.\n%s\n', ...
             nshost, nsport, nserror);
     end
-    hd.nsstatus = nsstatus;
 end
 NetStation('Synchronize');
 
@@ -80,7 +79,7 @@ if ~isfield(hd,'pahandle')
         error('Unsupported OS platform!');
     end
     
-    hd.pahandle = PsychPortAudio('Open',audiodevices(outdevice).DeviceIndex,[],[],hd.f_sample,2);
+    hd.pahandle = PsychPortAudio('Open',audiodevices(outdevice).DeviceIndex,[],[],hd.f_sample,1);
 end
 
 %create pseudorandom block order
@@ -88,9 +87,14 @@ if ~isfield(hd,'blocklist')
     blocklist = [
         'LAX'
         'LAY'
+        'LBX'
+        'LBY'
+        'RAX'
+        'RAY'
         'RBX'
         'RBY'
-        'CTL'
+        'XCL'
+        'YCL'
         ];
     
     xblocks = find(blocklist(:,3) == 'X');
@@ -113,6 +117,9 @@ if ~isfield(hd,'blocklist')
     hd.blocklist = blocklist;
     clear blocklist
     hd.blocknum = 1;
+    
+%     load('MARKERS.mat');
+%     hd.MARKERS = MARKERS;    
 end
 
 if ~isfield(hd,'instraudio')
@@ -134,15 +141,20 @@ while hd.blocknum <= length(hd.blocklist)
     tic;
     
     blockname = hd.blocklist(hd.blocknum,:);
-
+    
     %randomize slightly the sequence counts for each block
     seq2count = seq2countbase + round(rand*2)-1;
-    seq3count = seq3countbase + round(rand*2)-1;    
-
+    seq3count = seq3countbase + round(rand*2)-1;
+    
     %load audio files for this block
     
-    if strcmp(blockname,'CTL')
-        ctrlaudio = {'LAX2','LAY2','RBX2','RBY2'};
+    if strcmp(blockname,'XCL') || strcmp(blockname,'YCL')
+        
+        if strcmp(blockname,'XCL')
+            ctrlaudio = {'LAX2','LBX2','RAX2','RBX2'};
+        elseif strcmp(blockname,'YCL')
+            ctrlaudio = {'LAY2','LBY2','RAY2','RBY2'};
+        end
         
         seqaudio = cell(4,2);
         for s = 1:4
@@ -170,8 +182,8 @@ while hd.blocknum <= length(hd.blocklist)
         
         %     seq23pos = srepint(1)-1+randi(length(srepint),1,seq2count+seq3count);
         
-        seq23pos = cat(2, srepint1(1)-1+randi(length(srepint1),1,(seq2count+seq3count)*.8),... % 80% of oddball sequences with gap of srepint1
-            srepint2(1)-1+randi(length(srepint2),1,(seq2count+seq3count)*.2)); % 20% of oddball sequences with gap of srepint2
+        seq23pos = cat(2, srepint1(1)-1+randi(length(srepint1),1,round((seq2count+seq3count)*.8)),... % 80% of oddball sequences with gap of srepint1
+            srepint2(1)-1+randi(length(srepint2),1,round((seq2count+seq3count)*.2))); % 20% of oddball sequences with gap of srepint2
         
         seq23pos = seq23pos(randperm(length(seq23pos)));
         
@@ -203,12 +215,14 @@ while hd.blocknum <= length(hd.blocklist)
     end
     
     NetStation('Event','BGIN',GetSecs,0.001,'BNUM',hd.blocknum);
+    %sendmarker(hd.MARKERS.BGIN+hd.blocknum);
     pause(1);
     
     %play instruction
     PsychPortAudio('FillBuffer',hd.pahandle,hd.instraudio);
     PsychPortAudio('Start',hd.pahandle,1,0,1);
     NetStation('Event','INST',GetSecs,0.001,'BNUM',hd.blocknum);
+    %sendmarker(hd.MARKERS.VINS);
     PsychPortAudio('Stop',hd.pahandle,1);
     
     Priority(MaxPriority(0));
@@ -224,6 +238,7 @@ while hd.blocknum <= length(hd.blocklist)
             PsychPortAudio('FillBuffer',hd.pahandle,seqaudio{eventlist(curevent,2),2});
             PsychPortAudio('Start',hd.pahandle,1,0,1);
             NetStation('Event',seqaudio{eventlist(curevent,2),1},GetSecs,0.001,'BNUM',hd.blocknum);
+            %sendmarker(hd.MARKERS.(blockname) + eventlist(curevent,2));
             curevent = curevent + 1;
             
             %Wait till sound stops playing... ensures better playback on
@@ -239,6 +254,7 @@ while hd.blocknum <= length(hd.blocklist)
     
     pause(1);
     NetStation('Event','BEND',GetSecs,0.001,'BNUM',hd.blocknum);
+    %sendmarker(hd.MARKERS.BEND+hd.blocknum);
     
     pause(1);
     NetStation('StopRecording');
