@@ -1,2 +1,2 @@
-filepath = '/Users/chennu/Data/iGloLoc-Maria/';
+filepath = '/Users/chennu/Data/iGloLoc/';
 chanlocpath = '/Users/chennu/Work/EGI/';
