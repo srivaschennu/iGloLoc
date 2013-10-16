@@ -268,6 +268,8 @@ if nargout == 0
     save(save2file,'stat');
 end
 
+plotgfp(stat);
+
 function gfp = calcgfp(data,times)
 %data in channels x timepoints
 
