@@ -48,7 +48,7 @@ if isfield(stat,'negclusters') && ~isempty(stat.negclusters)
     end
 end
 
-if ~isempty(posclustidx)
+if stat.cfg.tail >= 0
     fprintf('Plotting positive clusters.\n');
     
     figfile = sprintf('figures/%s_%s_%s-%s_pos',stat.statmode,num2str(stat.subjinfo),stat.condlist{1},stat.condlist{2});
@@ -68,58 +68,63 @@ if ~isempty(posclustidx)
         end
     end
     
-    for p = 1:length(posclustidx)
-        clust_t = stat.diffcond.avg;
-        clust_t(~(stat.posclusterslabelmat == posclustidx(p))) = 0;
-        [~,maxchan] = max(clust_t);
-        
-        subplot(2,length(posclustidx),p);
-        plotvals = stat.diffcond.avg;
-        
-        topoplot(plotvals,stat.chanlocs, 'maplimits', 'absmax', 'electrodes','off', 'emarker2',{maxchan,'o','green',14,1},...
-            'pmask',stat.posclusterslabelmat==posclustidx(p));
-        
-        title(param.title,'FontName',fontname,'FontSize',fontsize);
-        colorbar('FontName',fontname,'FontSize',fontsize);
-        
-        subplot(2,length(posclustidx),length(posclustidx)+p);
-        set(gca,'ColorOrder',cat(1,colororder,[0 0 0]));
-        hold all;
-        
-        plot(statall.diffcond.time-statall.timeshift,[statall.diffcond.cond1avg(maxchan,:); statall.diffcond.cond2avg(maxchan,:)]','LineWidth',linewidth*1.5);
-        %ylim = get(gca,'YLim');
-        %ylim = ylim*2;
-        set(gca,'YLim',param.ylim,'XLim',[statall.diffcond.time(1) statall.diffcond.time(end)]-statall.timeshift,'XTick',statall.diffcond.time(1)-statall.timeshift:0.2:statall.diffcond.time(end)-statall.timeshift,...
-            'FontName',fontname,'FontSize',fontsize);
-        legend(param.legendstrings,'Location',param.legendposition);
-        
-        line([statall.diffcond.time(1) statall.diffcond.time(end)]-statall.timeshift,[0 0],'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([0 0],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([-0.60 -0.60],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([-0.45 -0.45],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([-0.30 -0.30],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([-0.15 -0.15],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([    0     0],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        
-        timeidx = find(statall.diffcond.time >= statall.cfg.latency(1) & statall.diffcond.time <= statall.cfg.latency(2));
-        cond1fit = polyfit(statall.diffcond.time(timeidx),statall.diffcond.cond1avg(maxchan,timeidx),1);
-        plot(statall.diffcond.time-statall.timeshift,polyval(cond1fit,statall.diffcond.time),'LineWidth',linewidth,'LineStyle','--','Color',colororder(1,:));
-        cond2fit = polyfit(statall.diffcond.time(timeidx),statall.diffcond.cond2avg(maxchan,timeidx),1);
-        plot(statall.diffcond.time-statall.timeshift,polyval(cond2fit,statall.diffcond.time),'LineWidth',linewidth,'LineStyle','--','Color',colororder(2,:));
-        xlabel('Time relative to 5th tone (sec) ','FontName',fontname,'FontSize',fontsize);
-        ylabel('Amplitude (uV)','FontName',fontname,'FontSize',fontsize);
-        title(sprintf('CNV diff. = %.2f (t = %.2f, p = %.3f) ',cond1fit(1)-cond2fit(1),...
-            stat.posclusters(posclustidx(p)).clusterstat, stat.posclusters(posclustidx(p)).prob), ...
-            'FontName',fontname,'FontSize',fontsize);
-        box off
+    clust_t = stat.diffcond.avg;
+    if ~isempty(postclustidx)
+        clust_t(~(stat.posclusterslabelmat == posclustidx)) = 0;
     end
+    [~,maxchan] = max(clust_t);
+    
+    subplot(2,1,1);
+    plotvals = stat.diffcond.avg;
+    
+    if ~isempty(posclustidx)
+        topoplot(plotvals,stat.chanlocs, 'maplimits', 'absmax', 'electrodes','off', 'emarker2',{maxchan,'o','green',14,1},...
+            'pmask',stat.posclusterslabelmat==posclustidx);
+    else
+        topoplot(plotvals,stat.chanlocs, 'maplimits', 'absmax', 'electrodes','off', 'emarker2',{maxchan,'o','green',14,1},...
+            'numcontour',0);
+    end
+    
+    title(param.title,'FontName',fontname,'FontSize',fontsize);
+    colorbar('FontName',fontname,'FontSize',fontsize);
+    
+    subplot(2,1,2);
+    set(gca,'ColorOrder',cat(1,colororder,[0 0 0]));
+    hold all;
+    
+    plot(statall.diffcond.time-statall.timeshift,[statall.diffcond.cond1avg(maxchan,:); statall.diffcond.cond2avg(maxchan,:)]','LineWidth',linewidth*1.5);
+    %ylim = get(gca,'YLim');
+    %ylim = ylim*2;
+    set(gca,'YLim',param.ylim,'XLim',[statall.diffcond.time(1) statall.diffcond.time(end)]-statall.timeshift,'XTick',statall.diffcond.time(1)-statall.timeshift:0.2:statall.diffcond.time(end)-statall.timeshift,...
+        'FontName',fontname,'FontSize',fontsize);
+    legend(param.legendstrings,'Location',param.legendposition);
+    
+    line([statall.diffcond.time(1) statall.diffcond.time(end)]-statall.timeshift,[0 0],'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([0 0],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.60 -0.60],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.45 -0.45],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.30 -0.30],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.15 -0.15],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([    0     0],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    
+    timeidx = find(statall.diffcond.time >= statall.cfg.latency(1) & statall.diffcond.time <= statall.cfg.latency(2));
+    cond1fit = polyfit(statall.diffcond.time(timeidx),statall.diffcond.cond1avg(maxchan,timeidx),1);
+    plot(statall.diffcond.time-statall.timeshift,polyval(cond1fit,statall.diffcond.time),'LineWidth',linewidth,'LineStyle','--','Color',colororder(1,:));
+    cond2fit = polyfit(statall.diffcond.time(timeidx),statall.diffcond.cond2avg(maxchan,timeidx),1);
+    plot(statall.diffcond.time-statall.timeshift,polyval(cond2fit,statall.diffcond.time),'LineWidth',linewidth,'LineStyle','--','Color',colororder(2,:));
+    xlabel('Time relative to 5th tone (sec) ','FontName',fontname,'FontSize',fontsize);
+    ylabel('Amplitude (uV)','FontName',fontname,'FontSize',fontsize);
+    title(sprintf('CNV diff. = %.2f (t = %.2f, p = %.3f) ',cond1fit(1)-cond2fit(1),...
+        stat.posclusters(posclustidx(p)).clusterstat, stat.posclusters(posclustidx(p)).prob), ...
+        'FontName',fontname,'FontSize',fontsize);
+    box off
     set(gcf,'Color','white');
     export_fig(gcf,[figfile '.eps']);
 else
     fprintf('No significant positive clusters found.\n');
 end
 
-if ~isempty(negclustidx)
+if stat.cfg.tail <= 0
     fprintf('Plotting negative clusters.\n');
     
     figfile = sprintf('figures/%s_%s_%s-%s_neg',stat.statmode,num2str(stat.subjinfo),stat.condlist{1},stat.condlist{2});
@@ -139,50 +144,56 @@ if ~isempty(negclustidx)
         end
     end
     
-    for p = 1:length(negclustidx)
-        clust_t = stat.diffcond.avg;
-        clust_t(~(stat.negclusterslabelmat == negclustidx(p))) = 0;
-        [~,minchan] = min(clust_t);
-        
-        subplot(2,length(negclustidx),p);
-        plotvals = stat.diffcond.avg;
-        
-        topoplot(plotvals,stat.chanlocs, 'maplimits', 'absmax', 'electrodes','off', 'emarker2',{minchan,'o','green',14,1},...
-            'pmask',stat.negclusterslabelmat==negclustidx(p));
-
-        title(param.title,'FontName',fontname,'FontSize',fontsize);
-        colorbar('FontName',fontname,'FontSize',fontsize);
-        
-        subplot(2,length(negclustidx),length(negclustidx)+p);
-        set(gca,'ColorOrder',cat(1,colororder,[0 0 0]));
-        hold all;
-        
-        plot(statall.diffcond.time-statall.timeshift,[statall.diffcond.cond1avg(minchan,:); statall.diffcond.cond2avg(minchan,:)]','LineWidth',linewidth*1.5);
-        %ylim = get(gca,'YLim');
-        %ylim = ylim*2;
-        set(gca,'YLim',param.ylim,'XLim',[statall.diffcond.time(1) statall.diffcond.time(end)]-statall.timeshift,'XTick',statall.diffcond.time(1)-statall.timeshift:0.2:statall.diffcond.time(end)-statall.timeshift,...
-            'FontName',fontname,'FontSize',fontsize);
-        legend(param.legendstrings,'Location',param.legendposition);
-        line([statall.diffcond.time(1) statall.diffcond.time(end)]-statall.timeshift,[0 0],'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([0 0],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([-0.60 -0.60],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([-0.45 -0.45],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([-0.30 -0.30],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([-0.15 -0.15],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        line([    0     0],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
-        
-        timeidx = find(statall.diffcond.time >= statall.cfg.latency(1) & statall.diffcond.time <= statall.cfg.latency(2));
-        cond1fit = polyfit(statall.diffcond.time(timeidx),statall.diffcond.cond1avg(minchan,timeidx),1);
-        plot(statall.diffcond.time-statall.timeshift,polyval(cond1fit,statall.diffcond.time),'LineWidth',linewidth,'LineStyle','--','Color',colororder(1,:));
-        cond2fit = polyfit(statall.diffcond.time(timeidx),statall.diffcond.cond2avg(minchan,timeidx),1);
-        plot(statall.diffcond.time-statall.timeshift,polyval(cond2fit,statall.diffcond.time),'LineWidth',linewidth,'LineStyle','--','Color',colororder(2,:));
-        xlabel('Time relative to 5th tone (sec) ','FontName',fontname,'FontSize',fontsize);
-        ylabel('Amplitude (uV)','FontName',fontname,'FontSize',fontsize);
-        title(sprintf('CNV diff. = %.2f (t = %.2f, p = %.3f) ',cond1fit(1)-cond2fit(1),...
-            stat.negclusters(negclustidx(p)).clusterstat, stat.negclusters(negclustidx(p)).prob), ...
-            'FontName',fontname,'FontSize',fontsize);
-        box off
+    clust_t = stat.diffcond.avg;
+    if ~isempty(negclustidx)
+        clust_t(~(stat.negclusterslabelmat == negclustidx)) = 0;
     end
+    [~,minchan] = min(clust_t);
+    
+    subplot(2,1,1);
+    plotvals = stat.diffcond.avg;
+    
+    
+    if ~isempty(negclustidx)
+        topoplot(plotvals,stat.chanlocs, 'maplimits', 'absmax', 'electrodes','off', 'emarker2',{minchan,'o','green',14,1},...
+            'pmask',stat.negclusterslabelmat==negclustidx);
+    else
+        topoplot(plotvals,stat.chanlocs, 'maplimits', 'absmax', 'electrodes','off', 'emarker2',{minchan,'o','green',14,1},...
+            'numcontour',0);
+    end
+    
+    title(param.title,'FontName',fontname,'FontSize',fontsize);
+    colorbar('FontName',fontname,'FontSize',fontsize);
+    
+    subplot(2,length(negclustidx),length(negclustidx)+p);
+    set(gca,'ColorOrder',cat(1,colororder,[0 0 0]));
+    hold all;
+    
+    plot(statall.diffcond.time-statall.timeshift,[statall.diffcond.cond1avg(minchan,:); statall.diffcond.cond2avg(minchan,:)]','LineWidth',linewidth*1.5);
+    %ylim = get(gca,'YLim');
+    %ylim = ylim*2;
+    set(gca,'YLim',param.ylim,'XLim',[statall.diffcond.time(1) statall.diffcond.time(end)]-statall.timeshift,'XTick',statall.diffcond.time(1)-statall.timeshift:0.2:statall.diffcond.time(end)-statall.timeshift,...
+        'FontName',fontname,'FontSize',fontsize);
+    legend(param.legendstrings,'Location',param.legendposition);
+    line([statall.diffcond.time(1) statall.diffcond.time(end)]-statall.timeshift,[0 0],'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([0 0],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.60 -0.60],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.45 -0.45],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.30 -0.30],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([-0.15 -0.15],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    line([    0     0],ylim,'LineWidth',linewidth,'Color','black','LineStyle',':');
+    
+    timeidx = find(statall.diffcond.time >= statall.cfg.latency(1) & statall.diffcond.time <= statall.cfg.latency(2));
+    cond1fit = polyfit(statall.diffcond.time(timeidx),statall.diffcond.cond1avg(minchan,timeidx),1);
+    plot(statall.diffcond.time-statall.timeshift,polyval(cond1fit,statall.diffcond.time),'LineWidth',linewidth,'LineStyle','--','Color',colororder(1,:));
+    cond2fit = polyfit(statall.diffcond.time(timeidx),statall.diffcond.cond2avg(minchan,timeidx),1);
+    plot(statall.diffcond.time-statall.timeshift,polyval(cond2fit,statall.diffcond.time),'LineWidth',linewidth,'LineStyle','--','Color',colororder(2,:));
+    xlabel('Time relative to 5th tone (sec) ','FontName',fontname,'FontSize',fontsize);
+    ylabel('Amplitude (uV)','FontName',fontname,'FontSize',fontsize);
+    title(sprintf('CNV diff. = %.2f (t = %.2f, p = %.3f) ',cond1fit(1)-cond2fit(1),...
+        stat.negclusters(negclustidx(p)).clusterstat, stat.negclusters(negclustidx(p)).prob), ...
+        'FontName',fontname,'FontSize',fontsize);
+    box off
     set(gcf,'Color','white');
     export_fig(gcf,[figfile '.eps']);
 else
