@@ -121,16 +121,16 @@ for s = 1:numsubj
         
         conddata{s,c} = pop_select(EEG,'trial',selectepochs);
         
-        saveEEG = conddata{s,c};
-        saveEEG.data = mean(conddata{s,c}.data,3);
-        saveEEG.setname = sprintf('%s_%s_%s',statmode,subjlist{s},subjcond{s,c});
-        saveEEG.filename = [saveEEG.setname '.set'];
-        saveEEG.trials = 1;
-        saveEEG.event = saveEEG.event(1);
-        saveEEG.event(1).type = saveEEG.setname;
-        saveEEG.epoch = saveEEG.epoch(1);
-        saveEEG.epoch(1).eventtype = saveEEG.setname;
-        pop_saveset(saveEEG,'filepath',filepath,'filename',saveEEG.filename);
+%         saveEEG = conddata{s,c};
+%         saveEEG.data = mean(conddata{s,c}.data,3);
+%         saveEEG.setname = sprintf('%s_%s_%s',statmode,subjlist{s},subjcond{s,c});
+%         saveEEG.filename = [saveEEG.setname '.set'];
+%         saveEEG.trials = 1;
+%         saveEEG.event = saveEEG.event(1);
+%         saveEEG.event(1).type = saveEEG.setname;
+%         saveEEG.epoch = saveEEG.epoch(1);
+%         saveEEG.epoch(1).eventtype = saveEEG.setname;
+%         pop_saveset(saveEEG,'filepath',filepath,'filename',saveEEG.filename);
         
 %         if (strcmp(statmode,'trial') || strcmp(statmode,'cond')) && c == numcond
 %             if conddata{s,1}.trials > conddata{s,2}.trials
