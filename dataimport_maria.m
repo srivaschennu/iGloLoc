@@ -17,10 +17,10 @@ end
 %% Filter the data
 lpfreq = 20;
 fprintf('Low-pass filtering below %dHz...\n',lpfreq);
-EEG = pop_eegfilt(EEG, 0, lpfreq, [], [0], 0, 0, 'fir1', 0);
+EEG = pop_eegfiltnew(EEG, 0, lpfreq);
 hpfreq = 0.5;
 fprintf('High-pass filtering above %dHz...\n',hpfreq);
-EEG = pop_eegfilt(EEG, hpfreq, 0, [], [0], 0, 0, 'fir1', 0);
+EEG = pop_eegfiltnew(EEG, hpfreq, 0);
 
 %% Rename markers
 fprintf('Renaming markers.\n');
