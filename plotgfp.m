@@ -34,6 +34,7 @@ param = finputcheck(varargin, { 'ylim', 'real', [], [-10 50]; ...
     'ttesttail', 'integer', [-1 0 1], 0; ...
     'plotinfo', 'string', {'on','off'}, 'on'; ...
     'legend', 'string', {'on','off'}, 'off'; ...
+    'maplimits', 'real', [], [-8 8]; ...
     });
 
 %% figure plotting
@@ -80,7 +81,7 @@ plotpnt = latpnt(1)-1+maxidx;
 subplot(2,2,1:2);
 % plotvals = mean(stat.inddata{1}(:,plotpnt,:),3);
 plotvals = mean(stat.inddata{1}(:,plotpnt,:),3) - mean(stat.inddata{2}(:,plotpnt,:),3);
-topoplot(plotvals,stat.chanlocs);
+topoplot(plotvals,stat.chanlocs,'maplimits',param.maplimits);
 cb_h = colorbar('FontSize',param.fontsize);
 cb_labels = num2cell(get(cb_h,'YTickLabel'),2);
 cb_labels{1} = [cb_labels{1} ' uV'];
@@ -191,4 +192,4 @@ end
     
 set(gcf,'Color','white');
 %saveas(gcf,[figfile '.fig']);
-% export_fig(gcf,[figfile '.eps']);
+export_fig(gcf,[figfile '.eps']);
