@@ -15,10 +15,10 @@ isi = 850; %milliseconds
 isijitter = 150; %milliseconds
 
 %Sequence frequencies
-startcount = 20;
-seq1count = 100;
-seq2countbase = 20;
-seq3countbase = 20;
+startcount = 16;
+seq1count = 80;
+seq2countbase = 16;
+seq3countbase = 16;
 
 if ~isempty(hd) && isstruct(hd)
     fprintf('Found existing run info.\n');
@@ -221,12 +221,13 @@ while hd.blocknum <= length(hd.blocklist)
     %sendmarker(hd.MARKERS.BGIN+hd.blocknum);
     pause(1);
     
+    % Do not play instruction - Srivas 17/11/2014
     %play instruction
-    PsychPortAudio('FillBuffer',hd.pahandle,hd.instraudio);
-    PsychPortAudio('Start',hd.pahandle,1,0,1);
-    NetStation('Event','INST',GetSecs,0.001,'BNUM',hd.blocknum);
+    %PsychPortAudio('FillBuffer',hd.pahandle,hd.instraudio);
+    %PsychPortAudio('Start',hd.pahandle,1,0,1);
+    %NetStation('Event','INST',GetSecs,0.001,'BNUM',hd.blocknum);
     %sendmarker(hd.MARKERS.VINS);
-    PsychPortAudio('Stop',hd.pahandle,1);
+    %PsychPortAudio('Stop',hd.pahandle,1);
     
     Priority(MaxPriority(0));
     curevent = 1;
