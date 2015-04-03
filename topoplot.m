@@ -1143,8 +1143,10 @@ if ~strcmpi(STYLE,'blank') % if draw interpolated scalp map
     if ~PMASKFLAG
         [cls chs] = contour(Xi,Yi,ZiC,CONTOURNUM,'k'); 
     else
-        %SRIVAS - fixed bug in plotting pmask contour
+        %SRIVAS - fixed bug in plotting pmask contour.
         ZiC(find(ZiC > 0.5 )) = 1;
+        %SRIVAS April 2015 - Updated fix to tighten contour boundary
+        ZiC(find(ZiC < 0.5 )) = 0;
         [cls chs] = contour(Xi,Yi,ZiC,1,'LineWidth',3,'Color',[0.5 0.5 0.5]);
 %         subh = get(chs, 'children');
 %         for indsubh = 1:length(subh)
