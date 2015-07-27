@@ -1,7 +1,7 @@
 function EEG = epochdata(basename,icamode)
 
 if ~exist('icamode','var') || isempty(icamode)
-    icamode = false;
+    icamode = true;
 end
 keepica = true;
 
