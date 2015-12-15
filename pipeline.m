@@ -1,8 +1,8 @@
 function pipeline(basename)
 
 dataimport(basename);
-epochdata(basename,1);
-rejartifacts2([basename '_epochs'],1,4);
+epochdata(basename);
+rejartifacts([basename '_epochs'],1,4);
 computeic([basename '_epochs']);
 rejectic(basename);
 rejartifacts2(basename,2,3);
