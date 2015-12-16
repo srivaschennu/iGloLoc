@@ -5,7 +5,8 @@ epochdata(basename);
 rejartifacts([basename '_epochs'],1,4);
 computeic([basename '_epochs']);
 rejectic(basename);
-rejartifacts2(basename,2,3);
+rejartifacts([basename '_clean'],2,4);
+rereference(basename,3);
 
 compgfp(basename,{'ld','ls'},'latency',[100 300]);
 compgfp(basename,{'ad','ls'},'latency',[100 300]);
