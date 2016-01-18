@@ -290,9 +290,9 @@ stat.timeshift = timeshift;
 stat.statmode = statmode;
 stat.subjinfo = subjinfo;
 
-if nargout == 0
+% if nargout == 0
     save(save2file, 'stat');
-end
+% end
 
 function EEG = convertogfp(EEG)
 
