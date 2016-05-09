@@ -192,7 +192,7 @@ hd.wblank = Screen('OpenOffscreenWindow',hd.window,hd.bgcolor,[1,1,hd.right,hd.b
 
 if ~isfield(hd,'instraudio')
     %load audio instruction
-    hd.instraudio = wavread('Stimuli3/instr.wav')';
+    hd.instraudio = audioread('Stimuli3/instr.wav')';
 end
 
 %loop through block list
@@ -228,7 +228,7 @@ while hd.blocknum <= length(hd.blocklist)
         seqaudio = cell(4,2);
         for s = 1:4
             seqaudio{s,1} = sprintf('%s%d',blockname,s);
-            seqaudio{s,2} = wavread(sprintf('Stimuli3/%s.wav',ctrlaudio{s}))';
+            seqaudio{s,2} = audioread(sprintf('Stimuli3/%s.wav',ctrlaudio{s}))';
         end
         
         seqord = zeros(1,120);
@@ -262,7 +262,7 @@ while hd.blocknum <= length(hd.blocklist)
         seqaudio = cell(3,2);
         for s = 1:3
             seqaudio{s,1} = sprintf('%s%d',blockname,s);
-            seqaudio{s,2} = wavread(sprintf('Stimuli3/%s%d.wav',blockname,s))';
+            seqaudio{s,2} = audioread(sprintf('Stimuli3/%s%d.wav',blockname,s))';
         end
         
         %setup sequence order and laterality
