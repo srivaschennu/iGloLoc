@@ -79,11 +79,12 @@ end
 plotpnt = latpnt(1)-1+maxidx;
 
 subplot(2,2,1:2);
+colormap(jet);
 % plotvals = mean(stat.inddata{1}(:,plotpnt,:),3);
 plotvals = mean(stat.inddata{1}(:,plotpnt,:),3) - mean(stat.inddata{2}(:,plotpnt,:),3);
 topoplot(plotvals,stat.chanlocs,'maplimits',param.maplimits);
 cb_h = colorbar('FontSize',param.fontsize);
-cb_labels = num2cell(get(cb_h,'YTickLabel'),2);
+cb_labels = get(cb_h,'YTickLabel');
 cb_labels{1} = [cb_labels{1} ' uV'];
 set(cb_h,'YTickLabel',cb_labels);
 
@@ -98,6 +99,7 @@ else
 end
 
 subplot(2,2,3:4);
+colormap(jet);
 curcolororder = get(gca,'ColorOrder');
 colororder = zeros(length(param.legendstrings),3);
 for str = 1:length(param.legendstrings)
@@ -192,4 +194,4 @@ end
     
 set(gcf,'Color','white');
 %saveas(gcf,[figfile '.fig']);
-export_fig(gcf,[figfile '.eps']);
+export_fig(gcf,[figfile '.eps'],'-p0.05');

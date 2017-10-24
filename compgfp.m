@@ -268,7 +268,7 @@ if nargout == 0
     save(save2file,'stat');
 end
 
-plotgfp(stat);
+plotgfp(stat,'legendstrings',{'monaural loc. std.'});
 
 function gfp = calcgfp(data,times)
 %data in channels x timepoints
